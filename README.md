@@ -1,6 +1,9 @@
-# MY SUPPS - サプリメント管理PWA
+# 🎯 MY SUPPS - 革新的サプリメント管理アプリ
 
-iHerbパワーユーザー向けの革新的なサプリメント管理アプリケーション。Spotifyライクなモダンなデザインで、サプリメントを楽しくコレクション管理。
+> iHerbパワーユーザーのためのSpotify風PWA
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/my-supps)
+[![Live Demo](https://img.shields.io/badge/demo-live-green)](https://my-supps.vercel.app)
 
 ## 🌟 主な機能
 
