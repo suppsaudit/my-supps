@@ -1,103 +1,111 @@
-import Image from "next/image";
+'use client';
+
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Search, Package, TrendingUp, BarChart3, User } from 'lucide-react';
+import { UserHeader } from '@/components/layout/user-header';
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen bg-gradient-to-br from-spotify-black via-spotify-gray-dark to-spotify-black">
+      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+      
+      <main className="relative z-10">
+        <header className="container mx-auto px-4 py-6 flex justify-between items-center">
+          <Link href="/" className="text-2xl font-black text-spotify-green">
+            MY SUPPS
+          </Link>
+          <UserHeader />
+        </header>
+        
+        <div className="container mx-auto px-4 py-16">
+          <div className="text-center mb-16">
+            <h1 className="text-6xl md:text-8xl font-black mb-6 bg-gradient-to-r from-spotify-green to-pink-light bg-clip-text text-transparent">
+              MY SUPPS
+            </h1>
+            <p className="text-xl md:text-2xl text-spotify-gray-light mb-12">
+              iHerbパワーユーザーのための革新的サプリ管理
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+              <Link href="/simulation">
+                <Button size="lg" className="bg-spotify-green hover:bg-spotify-green/90 text-black font-bold px-8 py-4 text-lg">
+                  <Package className="w-6 h-6 mr-2" />
+                  購入シミュレーション
+                </Button>
+              </Link>
+              <Link href="/my-supps">
+                <Button size="lg" variant="outline" className="border-spotify-green text-spotify-green hover:bg-spotify-green hover:text-black font-bold px-8 py-4 text-lg">
+                  <BarChart3 className="w-6 h-6 mr-2" />
+                  MY SUPPS
+                </Button>
+              </Link>
+            </div>
+          </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+            <Card className="bg-spotify-gray-dark/50 border-spotify-gray p-8 hover:border-spotify-green transition-colors">
+              <div className="flex items-center mb-4">
+                <Search className="w-8 h-8 text-spotify-green mr-3" />
+                <h3 className="text-2xl font-bold text-white">スマート検索</h3>
+              </div>
+              <p className="text-spotify-gray-light mb-4">
+                iHerb URLを貼り付けるだけで、サプリメント情報を自動取得
+              </p>
+              <div className="flex items-center text-spotify-green">
+                <span className="font-medium">URLを入力 →</span>
+              </div>
+            </Card>
+
+            <Card className="bg-spotify-gray-dark/50 border-spotify-gray p-8 hover:border-spotify-green transition-colors">
+              <div className="flex items-center mb-4">
+                <BarChart3 className="w-8 h-8 text-spotify-green mr-3" />
+                <h3 className="text-2xl font-bold text-white">革新的栄養チャート</h3>
+              </div>
+              <p className="text-spotify-gray-light mb-4">
+                サプリメントが栄養素チャートの外枠を形成する革命的視覚化
+              </p>
+              <div className="flex items-center text-spotify-green">
+                <span className="font-medium">チャートを確認 →</span>
+              </div>
+            </Card>
+
+            <Card className="bg-spotify-gray-dark/50 border-spotify-gray p-8 hover:border-spotify-green transition-colors">
+              <div className="flex items-center mb-4">
+                <TrendingUp className="w-8 h-8 text-spotify-green mr-3" />
+                <h3 className="text-2xl font-bold text-white">購入シミュレーション</h3>
+              </div>
+              <p className="text-spotify-gray-light mb-4">
+                最適なサプリメント組み合わせと購入タイミングを提案
+              </p>
+              <div className="flex items-center text-spotify-green">
+                <span className="font-medium">シミュレーション開始 →</span>
+              </div>
+            </Card>
+          </div>
+
+          <div className="text-center">
+            <h2 className="text-4xl font-bold text-white mb-8">今すぐ始めよう</h2>
+            <p className="text-xl text-spotify-gray-light mb-12">
+              あなたのサプリメント管理を次のレベルへ
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/auth">
+                <Button size="lg" className="bg-spotify-green hover:bg-spotify-green/90 text-black font-bold px-8 py-4 text-lg">
+                  <User className="w-6 h-6 mr-2" />
+                  アカウント作成
+                </Button>
+              </Link>
+              <Link href="/nutrients">
+                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-black font-bold px-8 py-4 text-lg">
+                  栄養素を探索
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }

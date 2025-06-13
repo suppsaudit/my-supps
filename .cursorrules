@@ -1,0 +1,74 @@
+# MY SUPPS Development Rules
+
+## Project Overview
+- App Name: MY SUPPS
+- Description: Spotify-like supplement management PWA
+- Target: iHerb power users in Japan
+- Language: Japanese UI with English code/comments
+
+## Tech Stack
+- Framework: Next.js 14 (App Router)
+- Language: TypeScript
+- Styling: Tailwind CSS + custom Spotify theme
+- UI Components: shadcn/ui
+- Database: Supabase
+- State Management: Zustand
+- Animations: Framer Motion
+
+## Design System
+- Primary Background: #121212
+- Secondary Background: #181818
+- Accent Color: #1DB954 (Spotify Green)
+- Error: #E22134
+- Warning: #F59E0B
+- Text Primary: #FFFFFF
+- Text Secondary: #B3B3B3
+- Font: Inter for UI, Japanese Gothic for content
+
+## Coding Standards
+- Use functional components with TypeScript
+- Implement proper error boundaries
+- Use server components where possible
+- Client components only when necessary (useState, useEffect, etc.)
+- File naming: kebab-case for files, PascalCase for components
+- Always include proper TypeScript types
+- No use of 'any' type
+
+## Component Guidelines
+- All components must be responsive
+- Include loading states
+- Include error states
+- Use Framer Motion for animations
+- Spotify-like hover effects (scale, glow)
+- Card components should have gradient borders on hover
+
+## Data Structure Rules
+- Primary ID: iHerb product ID
+- Secondary IDs: barcode, UPC, ASIN, JAN
+- All amounts in metric (mg, g)
+- Support both per-serving and per-unit display
+
+## Key Features to Always Consider
+1. Purchase simulation before buying
+2. Visual nutrient charts with RDA zones
+3. MY SUPPS library with visual selection states
+4. Dark/light theme support (default: dark)
+5. PWA offline capability
+6. Japanese regulatory compliance (no medical claims)
+
+## UI Patterns
+- Selected supplements: Pink overlay (#FF69B4 with opacity)
+- Unselected supplements: Grayscale filter
+- Loading: Spotify-style animated gradient
+- Buttons: Rounded with glow effect on hover
+- Charts: Show lower/upper recommended ranges as colored zones
+
+## Performance Requirements
+- Lighthouse score > 90
+- Images: Use WebP with lazy loading
+- Implement virtual scrolling for large lists
+- Cache supplement data locally
+
+## Accessibility
+- ARIA labels in Japanese
+- Keyboard navigation support

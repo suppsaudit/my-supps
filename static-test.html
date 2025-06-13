@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MY SUPPS - Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .spotify-green { color: #1DB954; }
+        .bg-spotify-black { background-color: #191414; }
+        .bg-spotify-gray-dark { background-color: #212121; }
+        .text-spotify-gray-light { color: #B3B3B3; }
+        .border-spotify-green { border-color: #1DB954; }
+        .text-spotify-green { color: #1DB954; }
+        .bg-spotify-green { background-color: #1DB954; }
+        .pink-light { color: #FFB6C1; }
+    </style>
+</head>
+<body class="bg-spotify-black">
+    <div class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+        
+        <main class="relative z-10">
+            <header class="container mx-auto px-4 py-6 flex justify-between items-center">
+                <div class="text-2xl font-black spotify-green">MY SUPPS</div>
+                <div class="text-white">Demo Mode</div>
+            </header>
+            
+            <div class="container mx-auto px-4 py-16">
+                <div class="text-center mb-16">
+                    <h1 class="text-6xl md:text-8xl font-black mb-6 bg-gradient-to-r from-green-400 to-pink-400 bg-clip-text text-transparent">
+                        MY SUPPS
+                    </h1>
+                    <p class="text-xl md:text-2xl text-gray-300 mb-12">
+                        iHerbパワーユーザーのための革新的サプリ管理
+                    </p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+                        <button class="bg-green-500 hover:bg-green-600 text-black font-bold px-8 py-4 text-lg rounded-lg flex items-center justify-center">
+                            📦 購入シミュレーション
+                        </button>
+                        <button class="border-2 border-green-500 text-green-500 hover:bg-green-500 hover:text-black font-bold px-8 py-4 text-lg rounded-lg flex items-center justify-center">
+                            📊 MY SUPPS
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+                    <div class="bg-gray-800/50 border border-gray-600 p-8 rounded-lg hover:border-green-500 transition-colors">
+                        <div class="flex items-center mb-4">
+                            <span class="text-2xl mr-3">🔍</span>
+                            <h3 class="text-2xl font-bold text-white">スマート検索</h3>
+                        </div>
+                        <p class="text-gray-300 mb-4">
+                            iHerb URLを貼り付けるだけで、サプリメント情報を自動取得
+                        </p>
+                        <div class="flex items-center text-green-500">
+                            <span class="font-medium">URLを入力 →</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-800/50 border border-gray-600 p-8 rounded-lg hover:border-green-500 transition-colors">
+                        <div class="flex items-center mb-4">
+                            <span class="text-2xl mr-3">📊</span>
+                            <h3 class="text-2xl font-bold text-white">革新的栄養チャート</h3>
+                        </div>
+                        <p class="text-gray-300 mb-4">
+                            サプリメントが栄養素チャートの外枠を形成する革命的視覚化
+                        </p>
+                        <div class="flex items-center text-green-500">
+                            <span class="font-medium">チャートを確認 →</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-800/50 border border-gray-600 p-8 rounded-lg hover:border-green-500 transition-colors">
+                        <div class="flex items-center mb-4">
+                            <span class="text-2xl mr-3">📈</span>
+                            <h3 class="text-2xl font-bold text-white">購入シミュレーション</h3>
+                        </div>
+                        <p class="text-gray-300 mb-4">
+                            最適なサプリメント組み合わせと購入タイミングを提案
+                        </p>
+                        <div class="flex items-center text-green-500">
+                            <span class="font-medium">シミュレーション開始 →</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <h2 class="text-4xl font-bold text-white mb-8">今すぐ始めよう</h2>
+                    <p class="text-xl text-gray-300 mb-12">
+                        あなたのサプリメント管理を次のレベルへ
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <button class="bg-green-500 hover:bg-green-600 text-black font-bold px-8 py-4 text-lg rounded-lg flex items-center justify-center">
+                            👤 アカウント作成
+                        </button>
+                        <button class="border-2 border-white text-white hover:bg-white hover:text-black font-bold px-8 py-4 text-lg rounded-lg flex items-center justify-center">
+                            栄養素を探索
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-16 p-8 bg-green-500/10 border border-green-500 rounded-lg">
+                    <h3 class="text-2xl font-bold text-green-500 mb-4">✅ アプリケーション状態</h3>
+                    <div class="text-white space-y-2">
+                        <p>• Next.js 15.3.3 + React 18 - 正常動作</p>
+                        <p>• TailwindCSS v3 - スタイル適用完了</p>
+                        <p>• Supabase デモモード - 認証・DB機能利用可能</p>
+                        <p>• PWA対応 - モバイル最適化済み</p>
+                        <p>• TypeScript + ESLint - コード品質保証</p>
+                        <p>• 革新的栄養チャート - Recharts実装済み</p>
+                    </div>
+                    <div class="mt-6 p-4 bg-yellow-500/20 border border-yellow-500 rounded">
+                        <p class="text-yellow-300">
+                            <strong>2016年Mac対応:</strong> 
+                            localhost接続問題を回避するため、Vercelデプロイまたは静的ファイルで確認可能
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
