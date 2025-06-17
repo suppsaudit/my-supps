@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supps Audit - 栄養成分合計チェック | MY SUPPS</title>
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Supabase CDN v2 -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- App Configuration -->
+    <script src="js/config.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/supps-audit.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <h1><span>M</span><span>Y</span> <span>S</span><span>U</span><span>P</span><span>P</span><span class="tilted-p">S</span></h1>
+                <p class="tagline">サプリガチヲタのための管理ツール。</p>
+            </div>
+            <nav>
+                <a href="index.html" class="nav-link">ホーム</a>
+                <a href="my-supps.html" class="nav-link">MY SUPPS</a>
+                <a href="supps-audit.html" class="nav-link active">Supps Audit</a>
+                <div id="user-menu" class="user-menu"></div>
+            </nav>
+        </header>
+
+        <main class="supps-audit">
+            <div class="audit-header">
+                <h2>Supps Audit</h2>
+                <p class="audit-description">
+                    選択したサプリメントの栄養成分を合計して、栄養バランスをチェックしましょう。
+                </p>
+                <div class="view-controls">
+                    <button class="view-mode-toggle" onclick="toggleViewMode()" id="view-mode-btn">1日分表示</button>
+                    <span class="selected-count">選択中: <span id="count">0</span>個</span>
+                </div>
+            </div>
+
+            <!-- Search Section -->
+            <div class="search-section">
+                <h3>サプリメントを検索</h3>
+                <div class="search-container">
+                    <div class="search-input-group">
+                        <select id="search-type" class="search-type-select">
+                            <option value="all">全て</option>
+                            <option value="product">商品名</option>
+                            <option value="brand">ブランド</option>
+                            <option value="ingredient">成分</option>
+                        </select>
+                        <input type="text" id="supplement-search" placeholder="サプリメントを検索..." class="search-input">
+                        <button onclick="searchSupplements()" class="btn btn-primary">検索</button>
+                    </div>
+                </div>
+                <div id="search-results" class="search-results"></div>
+            </div>
+
+            <div class="audit-content">
+                <!-- Chart Section -->
+                <div class="chart-section">
+                    <div class="chart-container">
+                        <canvas id="combined-chart" width="500" height="500"></canvas>
+                        <div class="chart-placeholder" id="chart-placeholder">
+                            <div class="placeholder-content">
+                                <h4>栄養成分チャート</h4>
+                                <p>サプリメントを選択すると、栄養成分の合計がレーダーチャートで表示されます。</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="legend-item current">
+                            <span class="color-indicator"></span>
+                            <span>現在の選択</span>
+                        </div>
+                        <div class="legend-item recommended">
+                            <span class="color-indicator"></span>
+                            <span>推奨摂取量 (100%)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nutrients Breakdown -->
+                <div class="nutrients-breakdown">
+                    <h3>栄養成分詳細</h3>
+                    <div id="nutrients-list" class="nutrients-list">
+                        <div class="empty-state">
+                            <p>サプリメントを選択すると、詳細な栄養成分が表示されます。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Selected Supplements -->
+            <div class="selected-supplements" id="selected-supplements">
+                <h3>選択中のサプリメント</h3>
+                <div class="selected-list" id="selected-list">
+                    <div class="empty-state">
+                        <p>まだサプリメントが選択されていません。</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/supabase-client.js"></script>
+    <script src="js/dsld-api.js"></script>
+    <script src="js/advanced-search.js"></script>
+    <script src="js/supps-audit.js"></script>
+</body>
+</html>

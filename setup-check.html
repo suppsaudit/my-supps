@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>セットアップチェック - MY SUPPS</title>
+    
+    <!-- Supabase CDN v2 -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .setup-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: var(--background-card);
+            border-radius: 20px;
+            box-shadow: var(--shadow-card);
+        }
+        
+        .check-item {
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .check-item.success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--success-color);
+        }
+        
+        .check-item.error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--danger-color);
+        }
+        
+        .check-item.warning {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid var(--warning-color);
+        }
+        
+        .status {
+            font-weight: 600;
+        }
+        
+        .status.success { color: var(--success-color); }
+        .status.error { color: var(--danger-color); }
+        .status.warning { color: var(--warning-color); }
+        
+        .setup-guide {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: var(--background-light);
+            border-radius: 10px;
+        }
+        
+        .setup-guide h3 {
+            margin-bottom: 1rem;
+        }
+        
+        .setup-guide ol {
+            margin-left: 1.5rem;
+        }
+        
+        .setup-guide li {
+            margin: 0.5rem 0;
+        }
+        
+        code {
+            background: var(--background-main);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <h1><span>M</span><span>Y</span> <span>S</span><span>U</span><span>P</span><span>P</span><span class="tilted-p">S</span></h1>
+                <p class="tagline">セットアップチェック</p>
+            </div>
+            <nav>
+                <a href="/" class="nav-link">ホーム</a>
+            </nav>
+        </header>
+
+        <main>
+            <div class="setup-container">
+                <h2>環境設定チェック</h2>
+                <p>MY SUPPSを使用するための環境設定を確認します。</p>
+                
+                <div id="checks">
+                    <!-- Check results will be displayed here -->
+                </div>
+                
+                <div class="setup-guide" id="setup-guide" style="display: none;">
+                    <h3>🚀 クイックセットアップガイド</h3>
+                    <ol>
+                        <li>
+                            <strong>Supabaseアカウントを作成</strong>
+                            <br><a href="https://supabase.com" target="_blank">https://supabase.com</a> にアクセスしてサインアップ（無料）
+                        </li>
+                        <li>
+                            <strong>新しいプロジェクトを作成</strong>
+                            <br>プロジェクト名: <code>my-supps</code>（任意）
+                            <br>データベースパスワードを設定
+                        </li>
+                        <li>
+                            <strong>プロジェクト情報を取得</strong>
+                            <br>Settings → API に移動
+                            <br>以下の2つをコピー:
+                            <ul>
+                                <li>Project URL (例: <code>https://abcdefg.supabase.co</code>)</li>
+                                <li>anon public key (例: <code>eyJhbGc...</code>)</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <strong>設定ファイルを更新</strong>
+                            <br><code>js/supabase-client.js</code> を編集して、上記の値を設定
+                        </li>
+                        <li>
+                            <strong>Google認証を設定（オプション）</strong>
+                            <br>Supabase Dashboard → Authentication → Providers → Google を有効化
+                        </li>
+                    </ol>
+                    
+                    <p style="margin-top: 1rem;">
+                        詳細な手順は <a href="SETUP.md" target="_blank">SETUP.md</a> を参照してください。
+                    </p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/supabase-client.js"></script>
+    <script>
+        async function runChecks() {
+            const checks = [];
+            
+            // 1. Check Supabase library
+            checks.push({
+                name: 'Supabase ライブラリ',
+                status: typeof window.supabase !== 'undefined' ? 'success' : 'error',
+                message: typeof window.supabase !== 'undefined' ? 'ロード済み' : '読み込みエラー'
+            });
+            
+            // 2. Check Supabase configuration
+            const hasValidUrl = SUPABASE_URL && SUPABASE_URL !== 'https://your-project-ref.supabase.co';
+            const hasValidKey = SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== 'your-anon-public-key-here';
+            
+            checks.push({
+                name: 'Supabase URL設定',
+                status: hasValidUrl ? 'success' : 'warning',
+                message: hasValidUrl ? SUPABASE_URL : '未設定（プレースホルダー値）'
+            });
+            
+            checks.push({
+                name: 'Supabase APIキー設定',
+                status: hasValidKey ? 'success' : 'warning',
+                message: hasValidKey ? '設定済み' : '未設定（プレースホルダー値）'
+            });
+            
+            // 3. Check Supabase client initialization
+            checks.push({
+                name: 'Supabaseクライアント',
+                status: supabase !== null ? 'success' : 'error',
+                message: supabase !== null ? '初期化成功' : '初期化失敗'
+            });
+            
+            // 4. Check connection (if client is initialized)
+            if (supabase) {
+                try {
+                    const { data, error } = await supabase.from('test').select('count').limit(1);
+                    checks.push({
+                        name: 'データベース接続',
+                        status: error ? 'warning' : 'success',
+                        message: error ? `接続可能（テーブル未作成）` : '接続成功'
+                    });
+                } catch (e) {
+                    checks.push({
+                        name: 'データベース接続',
+                        status: 'error',
+                        message: '接続エラー: ' + e.message
+                    });
+                }
+            }
+            
+            // Display results
+            const checksContainer = document.getElementById('checks');
+            checksContainer.innerHTML = checks.map(check => `
+                <div class="check-item ${check.status}">
+                    <div>
+                        <strong>${check.name}</strong>
+                        <br><small>${check.message}</small>
+                    </div>
+                    <span class="status ${check.status}">
+                        ${check.status === 'success' ? '✓' : check.status === 'warning' ? '!' : '✗'}
+                    </span>
+                </div>
+            `).join('');
+            
+            // Show setup guide if needed
+            const needsSetup = checks.some(c => c.status === 'warning' || c.status === 'error');
+            if (needsSetup) {
+                document.getElementById('setup-guide').style.display = 'block';
+            }
+        }
+        
+        // Run checks on page load
+        document.addEventListener('DOMContentLoaded', runChecks);
+    </script>
+</body>
+</html>

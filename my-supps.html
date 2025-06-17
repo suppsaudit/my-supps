@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Supps - 手持ちサプリメント管理 | MY SUPPS</title>
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Supabase CDN v2 -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- App Configuration -->
+    <script src="js/config.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/my-supps.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <h1><span>M</span><span>Y</span> <span>S</span><span>U</span><span>P</span><span>P</span><span class="tilted-p">S</span></h1>
+                <p class="tagline">サプリメントをData Drivenに管理するなら。</p>
+            </div>
+            <nav>
+                <a href="index.html" class="nav-link">ホーム</a>
+                <a href="products.html" class="nav-link">商品一覧</a>
+                <a href="my-supps.html" class="nav-link active">MY SUPPS</a>
+                <a href="supps-audit.html" class="nav-link">Supps Audit</a>
+                <div id="user-menu" class="user-menu"></div>
+            </nav>
+        </header>
+
+        <main class="my-supps-page">
+            <!-- Auth Check Message -->
+            <div id="auth-check" class="auth-check-message" style="display: none;">
+                <h2>ログインが必要です</h2>
+                <p>My Suppsを利用するにはログインしてください。</p>
+                <a href="auth.html" class="btn btn-primary">ログイン / 新規登録</a>
+            </div>
+
+            <!-- My Supps Content (shown when logged in) -->
+            <div id="my-supps-content" style="display: none;">
+                <div class="page-header">
+                    <h2>My Supps</h2>
+                    <p class="page-description">手持ちのサプリメントを管理して、栄養バランスを最適化しましょう。</p>
+                </div>
+
+                <!-- Add Supplement Section -->
+                <div class="add-supplement-section">
+                    <h3>サプリメントを追加</h3>
+                    <div class="search-container">
+                        <div class="search-input-group">
+                            <select id="search-type" class="search-type-select">
+                                <option value="all">全て</option>
+                                <option value="product">商品名</option>
+                                <option value="brand">ブランド</option>
+                                <option value="ingredient">成分</option>
+                            </select>
+                            <input type="text" id="supplement-search" placeholder="サプリメント名、ブランド、または成分で検索..." class="search-input">
+                            <button onclick="searchSupplements()" class="btn btn-primary">検索</button>
+                        </div>
+                        <div class="search-suggestions" id="search-suggestions" style="display: none;"></div>
+                    </div>
+                    <div id="search-results" class="search-results"></div>
+                </div>
+
+                <!-- My Supplements List -->
+                <div class="my-supplements-section">
+                    <h3>登録済みサプリメント</h3>
+                    <div class="supplements-stats">
+                        <span>合計: <span id="total-count">0</span>個</span>
+                        <button onclick="analyzeMySupps()" class="btn btn-secondary">栄養分析を見る</button>
+                    </div>
+                    <div id="my-supplements-list" class="supplements-grid">
+                        <!-- Supplements will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Nutrition Summary -->
+                <div class="nutrition-summary" id="nutrition-summary" style="display: none;">
+                    <h3>栄養成分サマリー</h3>
+                    <div class="chart-container">
+                        <canvas id="my-supps-chart" width="400" height="400"></canvas>
+                    </div>
+                    <div class="nutrient-details" id="nutrient-details">
+                        <!-- Nutrient details will be shown here -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/supabase-client.js"></script>
+    <script src="js/dsld-api.js"></script>
+    <script src="js/advanced-search.js"></script>
+    <script src="js/my-supps.js"></script>
+</body>
+</html>
