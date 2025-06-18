@@ -2,8 +2,12 @@
 
 > iHerbパワーユーザーのためのSpotify風PWA
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/my-supps)
-[![Live Demo](https://img.shields.io/badge/demo-live-green)](https://my-supps.vercel.app)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fsuppsaudit%2Fmy-supps&project-name=my-supps&repository-name=my-supps)
+[![Live Demo GitHub Pages](https://img.shields.io/badge/demo-live-green)](https://suppsaudit.github.io/my-supps/)
+
+## 🚀 ワンクリックデプロイ復旧
+
+**Vercel接続が切れた場合は上記のボタンで即座に復旧できます**
 
 ## 🌟 主な機能
 
