@@ -1,8 +1,51 @@
+# Development files
 node_modules
-.next
 .git
+.DS_Store
 *.log
 .env.local
-test-minimal
-static-test.html
-DEMO_GUIDE.md
+.env
+
+# Documentation
+*.md
+!README.md
+
+# Development configs
+.eslintrc*
+.prettierrc*
+tsconfig.json
+tailwind.config.ts
+postcss.config.mjs
+
+# Backup and temp files
+*_backup*
+*.tmp
+*.temp
+
+# Other frameworks
+my-supps-upload/
+my-supps-web/
+test-minimal/
+
+# Database files
+database/
+supabase/
+*.sql
+
+# Build artifacts from other frameworks
+.next/
+out/
+dist/
+build/
+
+# Scripts
+*.sh
+deploy.sh
+check-deployment.sh
+
+# Unused directories for static deployment
+app/
+lib/
+components/
+types/
+styles/
