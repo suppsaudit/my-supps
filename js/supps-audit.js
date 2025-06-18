@@ -4,7 +4,7 @@
 let selectedSupplements = [];
 let currentUser = null;
 let combinedChart = null;
-let viewMode = 'serving'; // 'serving' or 'unit'
+let viewMode = 'unit'; // 'unit' or 'serving' - デフォルトを'unit'に変更
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', async () => {
@@ -71,7 +71,8 @@ function initializeCombinedChart() {
     // ボタンの初期状態を設定
     const btn = document.getElementById('view-mode-btn');
     if (btn) {
-        btn.textContent = viewMode === 'serving' ? '1回分表示' : '1日分表示';
+        // viewMode='unit'の時、ボタンは'1日分表示'（servingモードに切り替える）
+        btn.textContent = viewMode === 'unit' ? '1日分表示' : '1回分表示';
         console.log('🔘 Initial button text set to:', btn.textContent, 'for mode:', viewMode);
     }
 }
@@ -80,11 +81,11 @@ function initializeCombinedChart() {
 function toggleViewMode() {
     console.log('🔄 Toggle view mode called. Current mode:', viewMode);
     
-    viewMode = viewMode === 'serving' ? 'unit' : 'serving';
+    viewMode = viewMode === 'unit' ? 'serving' : 'unit';
     const btn = document.getElementById('view-mode-btn');
     
     // ボタンテキストを現在のモードに合わせて更新
-    btn.textContent = viewMode === 'serving' ? '1回分表示' : '1日分表示';
+    btn.textContent = viewMode === 'unit' ? '1日分表示' : '1回分表示';
     
     console.log('🔄 New mode:', viewMode, 'Button text:', btn.textContent);
     
@@ -777,11 +778,13 @@ async function calculateCombinedNutrients() {
                 const unit = nutrient.unit || 'mg';
                 
                 // Adjust amount based on view mode
-                if (viewMode === 'unit' && supplement.serving_size) {
+                if (viewMode === 'serving' && supplement.serving_size) {
+                    // serving mode: multiply by serving size to get total daily amount
                     const servingMatch = supplement.serving_size.match(/(\d+)/);
                     const servingSize = servingMatch ? parseInt(servingMatch[1]) : 1;
-                    amount = amount / servingSize;
+                    amount = amount * servingSize;
                 }
+                // unit mode: use amount as-is (per unit)
                 
                 if (!combinedNutrients[name]) {
                     combinedNutrients[name] = {
