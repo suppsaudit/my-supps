@@ -41,6 +41,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Initialize combined chart with placeholder
 function initializeCombinedChart() {
     console.log('📈 Initializing combined chart...');
+    
+    const placeholder = document.getElementById('chart-placeholder');
+    const canvas = document.getElementById('combined-chart');
+    
+    if (placeholder) {
+        console.log('✅ Placeholder found, ensuring visibility');
+        placeholder.style.display = 'flex';
+        console.log('📊 Placeholder styles:', window.getComputedStyle(placeholder));
+    } else {
+        console.error('❌ Placeholder not found!');
+    }
+    
+    if (canvas) {
+        console.log('✅ Canvas found, hiding initially');
+        canvas.style.display = 'none';
+    } else {
+        console.error('❌ Canvas not found!');
+    }
+    
     showChartPlaceholder();
 }
 
