@@ -812,9 +812,11 @@ function displayCombinedChart(nutrients) {
     const labels = Object.keys(nutrients);
     const data = labels.map(label => nutrients[label].rdaPercent);
     
-    // レーダーチャートが正しく表示されるように最低3つのデータポイントを確保
-    while (labels.length < 3) {
-        labels.push(`仮想栄養素${labels.length + 1}`);
+    // レーダーチャートを円形にするために最低8つのデータポイントを確保
+    const minPoints = 8;
+    const originalLength = labels.length;
+    while (labels.length < minPoints) {
+        labels.push(''); // 空のラベルで仮想ポイント
         data.push(0);
     }
     
@@ -869,7 +871,11 @@ function displayCombinedChart(nutrients) {
                         font: {
                             size: 12
                         },
-                        color: '#fff'
+                        color: '#fff',
+                        callback: function(label, index) {
+                            // 実際の栄養素のみラベルを表示
+                            return label !== '' ? label : '';
+                        }
                     }
                 }
             },
@@ -883,10 +889,15 @@ function displayCombinedChart(nutrients) {
                     }
                 },
                 tooltip: {
+                    filter: function(tooltipItem) {
+                        // 仮想栄養素のツールチップを非表示
+                        return tooltipItem.label !== '';
+                    },
                     callbacks: {
                         label: function(context) {
                             const nutrientName = context.label;
                             const nutrient = nutrients[nutrientName];
+                            if (!nutrient) return '';
                             return `${nutrientName}: ${nutrient.amount.toFixed(1)}${nutrient.unit} (${context.parsed.r.toFixed(0)}% RDA)`;
                         }
                     }
