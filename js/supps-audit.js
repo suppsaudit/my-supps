@@ -71,19 +71,30 @@ function initializeCombinedChart() {
     // ボタンの初期状態を設定
     const btn = document.getElementById('view-mode-btn');
     if (btn) {
-        btn.textContent = viewMode === 'serving' ? '1日分表示' : '1回分表示';
+        btn.textContent = viewMode === 'serving' ? '1回分表示' : '1日分表示';
+        console.log('🔘 Initial button text set to:', btn.textContent, 'for mode:', viewMode);
     }
 }
 
 // Toggle view mode between serving and unit
 function toggleViewMode() {
+    console.log('🔄 Toggle view mode called. Current mode:', viewMode);
+    
     viewMode = viewMode === 'serving' ? 'unit' : 'serving';
     const btn = document.getElementById('view-mode-btn');
-    btn.textContent = viewMode === 'serving' ? '1日分表示' : '1回分表示';
     
-    // 既存のサプリメントがあれば再計算
+    // ボタンテキストを現在のモードに合わせて更新
+    btn.textContent = viewMode === 'serving' ? '1回分表示' : '1日分表示';
+    
+    console.log('🔄 New mode:', viewMode, 'Button text:', btn.textContent);
+    
+    // 既存のサプリメントがあれば再計算、なければプレースホルダーを表示
     if (selectedSupplements.length > 0) {
+        console.log('📊 Recalculating with', selectedSupplements.length, 'supplements');
         calculateCombinedNutrients();
+    } else {
+        console.log('📊 No supplements selected, showing placeholder');
+        showChartPlaceholder();
     }
 }
 
@@ -855,10 +866,17 @@ async function calculateCombinedNutrients() {
 // Display combined nutrients chart
 function displayCombinedChart(nutrients) {
     console.log('📈 Displaying chart with nutrients:', nutrients);
+    console.log('📈 Number of nutrients:', Object.keys(nutrients).length);
     
     const canvas = document.getElementById('combined-chart');
     const placeholder = document.getElementById('chart-placeholder');
     const legend = document.getElementById('chart-legend');
+    
+    console.log('📈 Elements found:', {
+        canvas: !!canvas,
+        placeholder: !!placeholder,
+        legend: !!legend
+    });
     
     if (Object.keys(nutrients).length === 0) {
         console.log('⚠️ No nutrients to display');
@@ -867,9 +885,19 @@ function displayCombinedChart(nutrients) {
     }
     
     // Hide placeholder and show chart
-    if (placeholder) placeholder.style.display = 'none';
-    if (legend) legend.style.display = 'block';
-    canvas.style.display = 'block';
+    console.log('📈 Showing chart, hiding placeholder');
+    if (placeholder) {
+        placeholder.style.display = 'none';
+        console.log('✅ Placeholder hidden');
+    }
+    if (legend) {
+        legend.style.display = 'block';
+        console.log('✅ Legend shown');
+    }
+    if (canvas) {
+        canvas.style.display = 'block';
+        console.log('✅ Canvas shown');
+    }
     
     const ctx = canvas.getContext('2d');
     
