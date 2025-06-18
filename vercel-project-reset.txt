@@ -1,0 +1,22 @@
+VERCEL PROJECT RESET REQUIRED
+
+Current Status:
+- Both domains returning 404
+- Latest commits not being deployed
+- Headers show x-matched-path: /404
+
+Solution Required:
+1. Delete current Vercel project
+2. Create new project with correct settings:
+   - Framework Preset: Other
+   - Build Command: (leave empty)
+   - Output Directory: . (current directory)
+   - Root Directory: . (current directory)
+
+Current commit: 1e0db8c
+Repository: https://github.com/suppsaudit/my-supps
+Branch: main
+
+Expected URLs after reset:
+- https://my-supps-new.vercel.app/
+- https://my-supps-new.vercel.app/supps-audit.html

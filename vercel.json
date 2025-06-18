@@ -1,76 +1,8 @@
 {
-  "functions": {},
   "trailingSlash": false,
   "cleanUrls": true,
   "buildCommand": "",
   "installCommand": "",
   "outputDirectory": ".",
-  "framework": null,
-  "routes": [
-    {
-      "src": "^/$",
-      "dest": "/index.html"
-    },
-    {
-      "src": "^/my-supps/?$",
-      "dest": "/my-supps.html"
-    },
-    {
-      "src": "^/supps-audit/?$",
-      "dest": "/supps-audit.html"
-    },
-    {
-      "src": "^/dashboard/?$",
-      "dest": "/dashboard.html"
-    },
-    {
-      "src": "^/products/?$",
-      "dest": "/products.html"
-    },
-    {
-      "src": "^/auth/?$",
-      "dest": "/auth.html"
-    },
-    {
-      "src": "^/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))$",
-      "dest": "/$1"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        }
-      ]
-    },
-    {
-      "source": "/js/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    },
-    {
-      "source": "/css/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    }
-  ]
+  "framework": null
 }
