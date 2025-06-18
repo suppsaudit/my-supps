@@ -1,0 +1,4 @@
+Force Vercel redeploy with latest commit containing all static HTML files
+Timestamp: 2025-06-18 22:15:00
+Latest commit: ba33d74
+Contains: index.html, my-supps.html, supps-audit.html, dashboard.html, products.html, auth.html
