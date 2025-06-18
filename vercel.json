@@ -1,30 +1,39 @@
 {
+  "functions": {},
   "trailingSlash": false,
   "cleanUrls": true,
-  "rewrites": [
+  "buildCommand": "",
+  "installCommand": "",
+  "outputDirectory": ".",
+  "framework": null,
+  "routes": [
     {
-      "source": "/",
-      "destination": "/index.html"
+      "src": "^/$",
+      "dest": "/index.html"
     },
     {
-      "source": "/my-supps",
-      "destination": "/my-supps.html"
+      "src": "^/my-supps/?$",
+      "dest": "/my-supps.html"
     },
     {
-      "source": "/supps-audit",
-      "destination": "/supps-audit.html"
+      "src": "^/supps-audit/?$",
+      "dest": "/supps-audit.html"
     },
     {
-      "source": "/dashboard",
-      "destination": "/dashboard.html"
+      "src": "^/dashboard/?$",
+      "dest": "/dashboard.html"
     },
     {
-      "source": "/products",
-      "destination": "/products.html"
+      "src": "^/products/?$",
+      "dest": "/products.html"
     },
     {
-      "source": "/auth",
-      "destination": "/auth.html"
+      "src": "^/auth/?$",
+      "dest": "/auth.html"
+    },
+    {
+      "src": "^/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))$",
+      "dest": "/$1"
     }
   ],
   "headers": [
