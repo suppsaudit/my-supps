@@ -8,11 +8,24 @@ let viewMode = 'serving'; // 'serving' or 'unit'
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 Supps Audit page initializing...');
+    
     currentUser = await checkAuth();
     updateUserMenu();
     loadSelectedSupplements();
     updateSelectedCount();
     initializeCombinedChart();
+    
+    // デバッグ: DOM要素の確認
+    const chartSection = document.getElementById('chart-section');
+    const placeholder = document.getElementById('chart-placeholder');
+    const canvas = document.getElementById('combined-chart');
+    
+    console.log('📊 Chart elements check:', {
+        chartSection: !!chartSection,
+        placeholder: !!placeholder,
+        canvas: !!canvas
+    });
     
     // Set up search input event listener
     const searchInput = document.getElementById('supplement-search');
@@ -24,6 +37,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 });
+
+// Initialize combined chart with placeholder
+function initializeCombinedChart() {
+    console.log('📈 Initializing combined chart...');
+    showChartPlaceholder();
+}
 
 // Load selected supplements from localStorage
 function loadSelectedSupplements() {

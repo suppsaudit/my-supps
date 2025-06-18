@@ -205,25 +205,28 @@
     justify-content: center;
     width: 500px;
     height: 500px;
-    background: var(--background-light);
-    border: 2px dashed var(--border-light);
+    background: #f3f4f6;
+    border: 2px dashed #d1d5db;
     border-radius: 20px;
     margin: 0 auto;
 }
 
 .placeholder-content {
     text-align: center;
-    color: var(--text-secondary);
+    color: #6b7280;
     padding: 2rem;
 }
 
 .placeholder-content h4 {
     margin-bottom: 1rem;
-    color: var(--text-primary);
+    color: #111827;
+    font-size: 1.25rem;
+    font-weight: 600;
 }
 
 .placeholder-content p {
     line-height: 1.6;
+    color: #6b7280;
 }
 
 .chart-legend {
