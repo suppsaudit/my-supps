@@ -1,16 +1,20 @@
 {
-  "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
-  "functions": {
-    "app/**/*.tsx": {
-      "maxDuration": 10
+  "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/index.html"
     }
-  },
-  "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "https://demo.supabase.co",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "demo_anon_key",
-    "NEXT_PUBLIC_SITE_URL": "https://my-supps.vercel.app"
-  }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ]
 }
