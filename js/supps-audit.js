@@ -44,6 +44,7 @@ function initializeCombinedChart() {
     
     const placeholder = document.getElementById('chart-placeholder');
     const canvas = document.getElementById('combined-chart');
+    const legend = document.getElementById('chart-legend');
     
     if (placeholder) {
         console.log('✅ Placeholder found, ensuring visibility');
@@ -60,7 +61,30 @@ function initializeCombinedChart() {
         console.error('❌ Canvas not found!');
     }
     
+    if (legend) {
+        legend.style.display = 'none';
+    }
+    
+    // デフォルト状態を確実に表示
     showChartPlaceholder();
+    
+    // ボタンの初期状態を設定
+    const btn = document.getElementById('view-mode-btn');
+    if (btn) {
+        btn.textContent = viewMode === 'serving' ? '1日分表示' : '1回分表示';
+    }
+}
+
+// Toggle view mode between serving and unit
+function toggleViewMode() {
+    viewMode = viewMode === 'serving' ? 'unit' : 'serving';
+    const btn = document.getElementById('view-mode-btn');
+    btn.textContent = viewMode === 'serving' ? '1日分表示' : '1回分表示';
+    
+    // 既存のサプリメントがあれば再計算
+    if (selectedSupplements.length > 0) {
+        calculateCombinedNutrients();
+    }
 }
 
 // Load selected supplements from localStorage
@@ -70,6 +94,10 @@ function loadSelectedSupplements() {
         selectedSupplements = JSON.parse(saved);
         displaySelectedSupplements();
         calculateCombinedNutrients();
+    } else {
+        // デフォルト状態でもチャート初期化
+        displayCombinedChart({});
+        displayNutrientsBreakdown({});
     }
 }
 
