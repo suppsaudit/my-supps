@@ -1,0 +1,8 @@
+node_modules
+.next
+.git
+*.log
+.env.local
+test-minimal
+static-test.html
+DEMO_GUIDE.md
