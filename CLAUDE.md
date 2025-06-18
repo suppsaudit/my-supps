@@ -1,5 +1,34 @@
 # MY SUPPS - Claude Code Development Guide
 
+## 🚨 最重要作業原則（CRITICAL WORK PRINCIPLES）
+
+### **絶対必須: 推測禁止・一次情報確認原則**
+**ALL WORK MUST START WITH PRIMARY SOURCE VERIFICATION - NO ASSUMPTIONS ALLOWED**
+
+1. **Before ANY deployment/configuration work:**
+   - FIRST: Check actual current settings via direct dashboard/interface access
+   - FIRST: Verify current file structure and content
+   - FIRST: Test current URLs and actual responses
+   - NEVER make assumptions based on past logs or documentation
+
+2. **For Vercel deployment issues:**
+   - MUST check Vercel dashboard directly: https://vercel.com/dashboard
+   - MUST verify current Framework Preset, Build Command, Output Directory settings
+   - MUST check actual deployment logs and file structure
+   - MUST test actual URLs and response content before making changes
+
+3. **For database/API issues:**
+   - MUST verify actual database tables and schema
+   - MUST test actual API endpoints and responses
+   - MUST check actual authentication states and tokens
+
+4. **Documentation of verification:**
+   - MUST document what was actually found vs. what was expected
+   - MUST provide evidence of current state before proposing solutions
+   - MUST explain the gap between expected and actual behavior
+
+**VIOLATION OF THIS PRINCIPLE IS UNACCEPTABLE AND WILL RESULT IN WASTED TIME AND USER FRUSTRATION**
+
 ## Project Overview
 
 MY SUPPS is a supplement management system providing comprehensive supplement analysis using official NIH DSLD (Dietary Supplement Label Database) data. The system consists of two parts:
