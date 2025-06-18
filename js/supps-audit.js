@@ -853,8 +853,8 @@ function displayCombinedChart(nutrients) {
     const labels = Object.keys(nutrients);
     const data = labels.map(label => nutrients[label].rdaPercent);
     
-    // レーダーチャートを円形にするために最低8つのデータポイントを確保
-    const minPoints = 8;
+    // レーダーチャートを完全な円にするために最低16個のデータポイントを確保
+    const minPoints = 16;
     const originalLength = labels.length;
     while (labels.length < minPoints) {
         labels.push(''); // 空のラベルで仮想ポイント
