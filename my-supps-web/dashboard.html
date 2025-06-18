@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マイページ - MY SUPPS</title>
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Supabase CDN v2 -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- App Configuration -->
+    <script src="js/config.js"></script>
+    
+    <!-- Tailwind CSS for shadcn UI style -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <h1><span>M</span><span>Y</span> <span>S</span><span>U</span><span>P</span><span>P</span><span class="tilted-p">S</span></h1>
+                <p class="tagline">サプリメントをData Drivenに管理するなら。</p>
+            </div>
+            <nav>
+                <a href="index.html" class="nav-link">ホーム</a>
+                <a href="my-supps.html" class="nav-link">MY SUPPS</a>
+                <a href="supps-audit.html" class="nav-link">Supps Audit</a>
+                <a href="dashboard.html" class="nav-link active">マイページ</a>
+                <div id="user-menu" class="user-menu"></div>
+            </nav>
+        </header>
+
+        <main class="dashboard-main">
+            <!-- CURRENT SCORE Section -->
+            <section class="dashboard-section current-score-section">
+                <div class="section-header">
+                    <h2 class="section-title">CURRENT SCORE</h2>
+                    <p class="section-subtitle">本日の栄養摂取状況</p>
+                </div>
+                
+                <div class="score-card">
+                    <div class="chart-container">
+                        <canvas id="currentScoreChart"></canvas>
+                    </div>
+                    <div class="nutrient-legend" id="nutrientLegend">
+                        <!-- Dynamic legend items will be inserted here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- TODAY'S SCHEDULE Section -->
+            <section class="dashboard-section schedule-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        TODAY'S SCHEDULE
+                        <button class="add-supplement-btn" title="マイサプリを追加" onclick="window.location.href='my-supps.html'">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                    </h2>
+                    <p class="section-subtitle">本日の摂取スケジュール</p>
+                </div>
+
+                <!-- Time Period Tabs -->
+                <div class="time-tabs">
+                    <button class="time-tab active" data-time="morning" onclick="switchTimePeriod('morning')">
+                        <span class="tab-icon">🌅</span>
+                        Morning
+                    </button>
+                    <button class="time-tab" data-time="day" onclick="switchTimePeriod('day')">
+                        <span class="tab-icon">☀️</span>
+                        Day
+                    </button>
+                    <button class="time-tab" data-time="night" onclick="switchTimePeriod('night')">
+                        <span class="tab-icon">🌙</span>
+                        Night
+                    </button>
+                    <button class="time-tab" data-time="before_sleep" onclick="switchTimePeriod('before_sleep')">
+                        <span class="tab-icon">😴</span>
+                        Before Sleep
+                    </button>
+                </div>
+
+                <!-- Schedule Items -->
+                <div class="schedule-content" id="scheduleContent">
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                        <p>スケジュールを読み込み中...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Stats -->
+            <section class="dashboard-section stats-section">
+                <h3 class="section-title">今週の統計</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalSupplements">0</div>
+                        <div class="stat-label">登録サプリ数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="todayIntake">0%</div>
+                        <div class="stat-label">本日の摂取率</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="weekStreak">0</div>
+                        <div class="stat-label">連続摂取日数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="nutrientCount">0</div>
+                        <div class="stat-label">摂取栄養素数</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/schedule-generator.js"></script>
+    <script src="js/nutrient-rda-data.js"></script>
+</body>
+</html>

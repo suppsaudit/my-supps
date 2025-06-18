@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">サプリメント詳細 - MY SUPPS</title>
+    <meta name="description" id="page-description" content="詳細な栄養成分データと科学的分析">
+    <meta name="keywords" content="サプリメント,栄養成分,DSLD,科学的データ,レーダーチャート">
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Supabase CDN v2 -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/supplement-detail.css">
+    
+    <!-- Structured Data for SEO -->
+    <script type="application/ld+json" id="structured-data">
+    {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": "",
+        "description": "",
+        "brand": {
+            "@type": "Brand",
+            "name": ""
+        },
+        "offers": {
+            "@type": "Offer",
+            "availability": "https://schema.org/InStock"
+        }
+    }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <h1><span>M</span><span>Y</span> <span>S</span><span>U</span><span>P</span><span>P</span><span class="tilted-p">S</span></h1>
+                <p class="tagline">サプリガチヲタのための管理ツール。</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-link">ホーム</a>
+                <a href="../products.html" class="nav-link">商品一覧</a>
+                <a href="../my-supps.html" class="nav-link">MY SUPPS</a>
+                <a href="../supps-audit.html" class="nav-link">Supps Audit</a>
+                <div id="user-menu" class="user-menu"></div>
+            </nav>
+        </header>
+
+        <main class="supplement-detail">
+            <!-- Loading State -->
+            <div id="loading-state" class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>サプリメント情報を読み込み中...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="error-state" class="error-state" style="display: none;">
+                <div class="error-icon">⚠️</div>
+                <h3>サプリメントが見つかりません</h3>
+                <p>指定されたサプリメントは存在しないか、削除された可能性があります。</p>
+                <a href="../products.html" class="btn btn-primary">商品一覧に戻る</a>
+            </div>
+
+            <!-- Supplement Content -->
+            <div id="supplement-content" class="supplement-content" style="display: none;">
+                <!-- Breadcrumb -->
+                <nav class="breadcrumb">
+                    <a href="../products.html">商品一覧</a>
+                    <span class="separator">></span>
+                    <span id="breadcrumb-category">カテゴリ</span>
+                    <span class="separator">></span>
+                    <span id="breadcrumb-product">商品名</span>
+                </nav>
+
+                <!-- Product Header -->
+                <div class="product-header">
+                    <div class="product-image-section">
+                        <div class="product-image" id="product-image">
+                            <div class="category-icon" id="category-icon">💊</div>
+                            <div class="brand-badge" id="brand-badge">ブランド</div>
+                        </div>
+                        <div class="product-actions">
+                            <button id="add-to-my-supps-btn" onclick="addToMySupps()" class="btn btn-primary">
+                                <span class="btn-icon">➕</span>
+                                MY SUPPSに追加
+                            </button>
+                            <button onclick="addToSuppsAudit()" class="btn btn-secondary">
+                                <span class="btn-icon">📊</span>
+                                Supps Auditで分析
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="product-info-section">
+                        <div class="product-title">
+                            <h1 id="product-name">サプリメント名</h1>
+                            <p id="product-brand" class="brand-name">ブランド名</p>
+                        </div>
+                        
+                        <div class="product-meta">
+                            <div class="meta-item">
+                                <span class="meta-label">カテゴリ</span>
+                                <span id="product-category" class="meta-value">ビタミン</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">摂取形態</span>
+                                <span id="product-form" class="meta-value">カプセル</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">摂取量</span>
+                                <span id="product-serving" class="meta-value">1日1回</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">データソース</span>
+                                <span class="meta-value">NIH DSLD</span>
+                            </div>
+                        </div>
+                        
+                        <div class="serving-toggle">
+                            <label class="toggle-label">表示単位:</label>
+                            <div class="toggle-buttons">
+                                <button id="serving-btn" class="toggle-btn active" onclick="toggleServingMode('serving')">1日分</button>
+                                <button id="unit-btn" class="toggle-btn" onclick="toggleServingMode('unit')">1粒あたり</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nutrients Analysis -->
+                <div class="nutrients-analysis">
+                    <div class="chart-section">
+                        <div class="section-header">
+                            <h2>栄養成分レーダーチャート</h2>
+                            <p class="section-description">推奨摂取量（RDA）に対する割合を可視化</p>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="nutrients-chart" width="500" height="500"></canvas>
+                            <div class="chart-placeholder" id="chart-placeholder">
+                                <div class="placeholder-content">
+                                    <h4>栄養成分チャート</h4>
+                                    <p>栄養成分データを読み込み中...</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <span class="color-indicator current"></span>
+                                <span>現在の摂取量</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="color-indicator recommended"></span>
+                                <span>推奨摂取量 (100%)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="nutrients-breakdown">
+                        <div class="section-header">
+                            <h2>栄養成分詳細</h2>
+                            <p class="section-description">各栄養素の含有量と推奨摂取量に対する割合</p>
+                        </div>
+                        <div id="nutrients-list" class="nutrients-list">
+                            <!-- 栄養成分リストが動的に生成されます -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Related Products -->
+                <div class="related-products">
+                    <div class="section-header">
+                        <h2>関連商品</h2>
+                        <p class="section-description">同じカテゴリの他の商品</p>
+                    </div>
+                    <div id="related-products-grid" class="related-products-grid">
+                        <!-- 関連商品が動的に生成されます -->
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 MY SUPPS. All rights reserved.</p>
+            <p class="disclaimer">本サービスは医療アドバイスではありません。健康に関する決定は医療専門家にご相談ください。</p>
+        </footer>
+    </div>
+
+    <script src="../js/supabase-client.js"></script>
+    <script src="../js/dsld-api.js"></script>
+    <script src="../js/advanced-search.js"></script>
+    <script src="../js/supplement-detail.js"></script>
+</body>
+</html>

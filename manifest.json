@@ -1,0 +1,26 @@
+{
+  "name": "MY SUPPS - サプリメント管理アプリ",
+  "short_name": "MY SUPPS",
+  "description": "iHerbパワーユーザーのための革新的サプリメント管理アプリ",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#10b981",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icon-512.png", 
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "categories": ["health", "lifestyle", "productivity"],
+  "lang": "ja"
+}

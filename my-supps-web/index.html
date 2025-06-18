@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MY SUPPS - サプリメント管理システム</title>
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Supabase CDN v2 -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- App Configuration -->
+    <script src="js/config.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header id="main-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h1><span>M</span><span>Y</span> <span>S</span><span>U</span><span>P</span><span>P</span><span class="tilted-p">S</span></h1>
+                    <p class="tagline">サプリメントをData Drivenに管理するなら。</p>
+                </div>
+                <nav class="navigation">
+                    <a href="index.html" class="nav-link active">ホーム</a>
+                    <a href="my-supps.html" class="nav-link">MY SUPPS</a>
+                    <a href="supps-audit.html" class="nav-link">Supps Audit</a>
+                    <div id="user-menu" class="user-menu"></div>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <main>
+            <section class="hero">
+                <h2>サプリメントをもっと賢く、もっと楽しく</h2>
+                <p>栄養成分の重複や過剰摂取を視覚的にチェック。<br>あなたに最適なサプリメント組み合わせを見つけましょう。</p>
+                
+                <div class="cta-buttons">
+                    <button class="btn btn-primary" onclick="window.location.href='/supps-audit.html'">
+                        手持ちのサプリとの組み合わせをシミュレーション
+                    </button>
+                    <button class="btn btn-secondary" onclick="showDemo()">
+                        デモを見る
+                    </button>
+                </div>
+            </section>
+
+            <section class="features">
+                <h3>主な機能</h3>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">📊</div>
+                        <h4>革新的栄養チャート</h4>
+                        <p>サプリメントがチャートの外枠を形成。視覚的に栄養バランスを確認できます。</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">🎮</div>
+                        <h4>ゲームライクなUI</h4>
+                        <p>ピンクでポップな選択UI。サプリメント管理が楽しくなります。</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">🔍</div>
+                        <h4>スマート検索</h4>
+                        <p>バーコードやiHerb IDで簡単検索。豊富なサプリメントデータベース。</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">📱</div>
+                        <h4>モバイルアプリ連携</h4>
+                        <p>摂取記録やカレンダー管理はネイティブアプリで。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="popular-nutrients">
+                <h3>今検索されています</h3>
+                <div class="hashtag-container">
+                    <div class="hashtag-row">
+                        <div class="hashtag-scroll row-1">
+                            <span class="hashtag-item">#ビタミンC</span>
+                            <span class="hashtag-item">#マグネシウム</span>
+                            <span class="hashtag-item">#プロテイン</span>
+                            <span class="hashtag-item">#コエンザイムQ10</span>
+                            <span class="hashtag-item">#ビタミンK2</span>
+                            <span class="hashtag-item">#リコピン</span>
+                            <span class="hashtag-item">#ビタミンC</span>
+                            <span class="hashtag-item">#マグネシウム</span>
+                            <span class="hashtag-item">#プロテイン</span>
+                        </div>
+                    </div>
+                    <div class="hashtag-row">
+                        <div class="hashtag-scroll row-2">
+                            <span class="hashtag-item">#ビタミンD</span>
+                            <span class="hashtag-item">#亜鉛</span>
+                            <span class="hashtag-item">#クレアチン</span>
+                            <span class="hashtag-item">#ルテイン</span>
+                            <span class="hashtag-item">#アスタキサンチン</span>
+                            <span class="hashtag-item">#ビタミンD</span>
+                            <span class="hashtag-item">#亜鉛</span>
+                            <span class="hashtag-item">#クレアチン</span>
+                        </div>
+                    </div>
+                    <div class="hashtag-row">
+                        <div class="hashtag-scroll row-3">
+                            <span class="hashtag-item">#オメガ3</span>
+                            <span class="hashtag-item">#鉄分</span>
+                            <span class="hashtag-item">#ビタミンB12</span>
+                            <span class="hashtag-item">#グルコサミン</span>
+                            <span class="hashtag-item">#コンドロイチン</span>
+                            <span class="hashtag-item">#オメガ3</span>
+                            <span class="hashtag-item">#鉄分</span>
+                            <span class="hashtag-item">#ビタミンB12</span>
+                        </div>
+                    </div>
+                    <div class="hashtag-row">
+                        <div class="hashtag-scroll row-4">
+                            <span class="hashtag-item">#カルノシン</span>
+                            <span class="hashtag-item">#葉酸</span>
+                            <span class="hashtag-item">#ビオチン</span>
+                            <span class="hashtag-item">#セレン</span>
+                            <span class="hashtag-item">#モリブデン</span>
+                            <span class="hashtag-item">#カルノシン</span>
+                            <span class="hashtag-item">#葉酸</span>
+                            <span class="hashtag-item">#ビオチン</span>
+                        </div>
+                    </div>
+                    <div class="hashtag-row">
+                        <div class="hashtag-scroll row-5">
+                            <span class="hashtag-item">#ビタミンE</span>
+                            <span class="hashtag-item">#カルシウム</span>
+                            <span class="hashtag-item">#ナイアシン</span>
+                            <span class="hashtag-item">#パントテン酸</span>
+                            <span class="hashtag-item">#クロム</span>
+                            <span class="hashtag-item">#ビタミンE</span>
+                            <span class="hashtag-item">#カルシウム</span>
+                            <span class="hashtag-item">#ナイアシン</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 MY SUPPS. All rights reserved.</p>
+            <p class="disclaimer">本サービスは医療アドバイスではありません。健康に関する決定は医療専門家にご相談ください。</p>
+        </footer>
+    </div>
+
+    <!-- Modal for demo -->
+    <div id="demo-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeDemo()">&times;</span>
+            <h3>MY SUPPS デモ</h3>
+            <canvas id="demo-chart" width="400" height="400"></canvas>
+            <p>複数のサプリメントを選択すると、栄養成分が合計されて表示されます。</p>
+        </div>
+    </div>
+
+    <script src="js/navigation.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

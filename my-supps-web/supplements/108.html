@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Extension バッファードビタミンC - MY SUPPS</title>
+    <meta name="description" content="Life Extension バッファードビタミンCの詳細な栄養成分データと科学的分析">
+    <meta name="keywords" content="Life Extension バッファードビタミンC,Life Extension,サプリメント,栄養成分,DSLD,科学的データ,レーダーチャート">
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Supabase CDN v2 -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/supplement-detail.css">
+    
+    <!-- Structured Data for SEO -->
+    <script type="application/ld+json">
+    {
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "Life Extension バッファードビタミンC",
+  "description": "Life Extension バッファードビタミンCの詳細な栄養成分データと科学的分析",
+  "brand": {
+    "@type": "Brand",
+    "name": "Life Extension"
+  },
+  "offers": {
+    "@type": "Offer",
+    "availability": "https://schema.org/InStock"
+  }
+}
+    </script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <h1><span>M</span><span>Y</span> <span>S</span><span>U</span><span>P</span><span>P</span><span class="tilted-p">S</span></h1>
+                <p class="tagline">サプリガチヲタのための管理ツール。</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-link">ホーム</a>
+                <a href="../products.html" class="nav-link">商品一覧</a>
+                <a href="../my-supps.html" class="nav-link">MY SUPPS</a>
+                <a href="../supps-audit.html" class="nav-link">Supps Audit</a>
+                <div id="user-menu" class="user-menu"></div>
+            </nav>
+        </header>
+
+        <main class="supplement-detail">
+            <div class="supplement-content">
+                <!-- Breadcrumb -->
+                <nav class="breadcrumb">
+                    <a href="../products.html">商品一覧</a>
+                    <span class="separator">></span>
+                    <span>ビタミン</span>
+                    <span class="separator">></span>
+                    <span>Life Extension バッファードビタミンC</span>
+                </nav>
+
+                <!-- Product Header -->
+                <div class="product-header">
+                    <div class="product-image-section">
+                        <div class="product-image">
+                            <img src="https://s3.images-iherb.com/now/now01379/y/17.jpg" alt="Life Extension バッファードビタミンC" class="supplement-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                 <div class="category-icon-fallback vitamins" style="display: none;">🧬</div>
+                            <div class="brand-badge">Life Extension</div>
+                        </div>
+                        <div class="product-actions">
+                            <button onclick="addToMySupps('108')" class="btn btn-primary">
+                                <span class="btn-icon">➕</span>
+                                MY SUPPSに追加
+                            </button>
+                            <button onclick="addToSuppsAudit('108')" class="btn btn-secondary">
+                                <span class="btn-icon">📊</span>
+                                Supps Auditで分析
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="product-info-section">
+                        <div class="product-title">
+                            <h1>Life Extension バッファードビタミンC</h1>
+                            <p class="brand-name">Life Extension</p>
+                        </div>
+                        
+                        <div class="product-meta">
+                            <div class="meta-item">
+                                <span class="meta-label">カテゴリ</span>
+                                <span class="meta-value">ビタミン</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">摂取形態</span>
+                                <span class="meta-value">ソフトジェル</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">摂取量</span>
+                                <span class="meta-value">3ソフトジェル</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">データソース</span>
+                                <span class="meta-value">NIH DSLD</span>
+                            </div>
+                        </div>
+                        
+                        <div class="serving-toggle">
+                            <label class="toggle-label">表示単位:</label>
+                            <div class="toggle-buttons">
+                                <button id="serving-btn-108" class="toggle-btn active" onclick="toggleServingMode('108', 'serving')">1日分</button>
+                                <button id="unit-btn-108" class="toggle-btn" onclick="toggleServingMode('108', 'unit')">1粒あたり</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nutrients Analysis -->
+                <div class="nutrients-analysis">
+                    <div class="chart-section">
+                        <div class="section-header">
+                            <h2>栄養成分レーダーチャート</h2>
+                            <p class="section-description">推奨摂取量（RDA）に対する割合を可視化</p>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="nutrients-chart-108" width="500" height="500"></canvas>
+                        </div>
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <span class="color-indicator current"></span>
+                                <span>現在の摂取量</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="color-indicator recommended"></span>
+                                <span>推奨摂取量 (100%)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="nutrients-breakdown">
+                        <div class="section-header">
+                            <h2>栄養成分詳細</h2>
+                            <p class="section-description">各栄養素の含有量と推奨摂取量に対する割合</p>
+                        </div>
+                        <div class="nutrients-list">
+                            
+            <div class="nutrient-item adequate">
+                <div class="nutrient-header">
+                    <span class="nutrient-name">ビタミンC</span>
+                    <span class="nutrient-percent">300%</span>
+                </div>
+                <div class="nutrient-details">
+                    <span class="nutrient-amount">752.9 mg</span>
+                    <div class="nutrient-bar">
+                        <div class="nutrient-fill" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 MY SUPPS. All rights reserved.</p>
+            <p class="disclaimer">本サービスは医療アドバイスではありません。健康に関する決定は医療専門家にご相談ください。</p>
+        </footer>
+    </div>
+
+    <!-- Embedded Product Data -->
+    <script>
+        window.currentProductData = {
+  "id": "108",
+  "dsld_id": "DSLD_108",
+  "name_en": "Life Extension Buffered Vitamin C",
+  "name_ja": "Life Extension バッファードビタミンC",
+  "brand": "Life Extension",
+  "category": "vitamins",
+  "serving_form": "softgel",
+  "serving_size": 3,
+  "nutrients": [
+    {
+      "name_ja": "ビタミンC",
+      "amount": 752.9455530669435,
+      "unit": "mg"
+    }
+  ],
+  "image_url": "https://s3.images-iherb.com/now/now01379/y/17.jpg",
+  "label_url": "https://dsldapi.od.nih.gov/labels/products/108/label.pdf",
+  "popularity_score": 9.488048167170081,
+  "created_at": "2025-04-19T01:30:20.861Z"
+};
+    </script>
+    
+    <script src="../js/supabase-client.js"></script>
+    <script src="../js/dsld-api.js"></script>
+    <script src="../js/static-supplement-detail.js"></script>
+</body>
+</html>
