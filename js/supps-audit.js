@@ -4,7 +4,7 @@
 let selectedSupplements = [];
 let currentUser = null;
 let combinedChart = null;
-let viewMode = 'unit'; // 'unit' or 'serving' - デフォルトを'unit'に変更
+let viewMode = 'serving'; // 'unit' or 'serving' - デフォルトを'serving'に戻す
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', async () => {
@@ -71,8 +71,8 @@ function initializeCombinedChart() {
     // ボタンの初期状態を設定
     const btn = document.getElementById('view-mode-btn');
     if (btn) {
-        // viewMode='unit'の時、ボタンは'1日分表示'（servingモードに切り替える）
-        btn.textContent = viewMode === 'unit' ? '1日分表示' : '1回分表示';
+        // viewMode='serving'の時、ボタンは'1回分表示'（unitモードに切り替える）
+        btn.textContent = viewMode === 'serving' ? '1回分表示' : '1日分表示';
         console.log('🔘 Initial button text set to:', btn.textContent, 'for mode:', viewMode);
     }
 }
@@ -81,11 +81,11 @@ function initializeCombinedChart() {
 function toggleViewMode() {
     console.log('🔄 Toggle view mode called. Current mode:', viewMode);
     
-    viewMode = viewMode === 'unit' ? 'serving' : 'unit';
+    viewMode = viewMode === 'serving' ? 'unit' : 'serving';
     const btn = document.getElementById('view-mode-btn');
     
     // ボタンテキストを現在のモードに合わせて更新
-    btn.textContent = viewMode === 'unit' ? '1日分表示' : '1回分表示';
+    btn.textContent = viewMode === 'serving' ? '1回分表示' : '1日分表示';
     
     console.log('🔄 New mode:', viewMode, 'Button text:', btn.textContent);
     
@@ -101,15 +101,19 @@ function toggleViewMode() {
 
 // Load selected supplements from localStorage
 function loadSelectedSupplements() {
+    console.log('📋 Loading selected supplements from localStorage...');
     const saved = localStorage.getItem('selectedSupplements');
     if (saved) {
         selectedSupplements = JSON.parse(saved);
+        console.log('📋 Loaded', selectedSupplements.length, 'supplements from localStorage');
+        updateSelectedCount();
         displaySelectedSupplements();
         calculateCombinedNutrients();
     } else {
+        console.log('📋 No saved supplements found, initializing empty state');
         // デフォルト状態でもチャート初期化
-        displayCombinedChart({});
-        displayNutrientsBreakdown({});
+        showChartPlaceholder();
+        showNutrientsPlaceholder();
     }
 }
 
@@ -140,22 +144,22 @@ async function searchSupplements() {
         let dsldResults = [];
         
         try {
-            // DSLD APIで直接検索
+            // DSLD APIで直接検索（改良されたAPI統合）
             const dsldResponse = await window.dsldApi.searchProducts(searchTerm, { 
                 limit: 50 
             });
             
             if (dsldResponse && dsldResponse.hits && dsldResponse.hits.length > 0) {
-                console.log(`✅ Found ${dsldResponse.hits.length} products from DSLD API`);
+                console.log(`✅ Found ${dsldResponse.hits.length} products from improved API`);
                 dsldResults = dsldResponse.hits.map(hit => hit._source);
             } else {
-                console.log('⚠️ No results from DSLD API');
+                console.log('⚠️ No results found');
                 dsldResults = [];
             }
         } catch (apiError) {
-            console.error('❌ DSLD API search failed:', apiError);
-            // Use mock results as fallback for demonstration
-            dsldResults = generateMockSearchResults(searchTerm);
+            console.error('❌ API search failed:', apiError);
+            // This should not happen with the new comprehensive fallback system
+            dsldResults = [];
         }
         
         // Use DSLD results directly - they're already filtered by the API
@@ -466,9 +470,157 @@ function generateMockSearchResults(searchTerm) {
             ingredients: [{ name: 'Probiotics', ingredientGroup: 'Probiotics' }],
             nutrients: [{ name_ja: 'プロバイオティクス', amount: 1, unit: 'billion CFU' }]
         },
-        // アミノ酸・特殊成分
+        // マルチビタミン（重要！）
         {
             id: 'mock-13',
+            product_name: 'Nature\'s Way, Alive! Once Daily Men\'s Multivitamin, 60 Tablets',
+            brand_name: 'Nature\'s Way',
+            serving_size: '1 tablet',
+            ingredients: [
+                { name: 'Multivitamin', ingredientGroup: 'Multivitamin' },
+                { name: 'Vitamin A', ingredientGroup: 'Vitamin A' },
+                { name: 'Vitamin C', ingredientGroup: 'Vitamin C' },
+                { name: 'Vitamin D3', ingredientGroup: 'Vitamin D' },
+                { name: 'Vitamin E', ingredientGroup: 'Vitamin E' },
+                { name: 'B-Complex', ingredientGroup: 'B Vitamins' }
+            ],
+            nutrients: [
+                { name_ja: 'ビタミンA', amount: 5000, unit: 'IU' },
+                { name_ja: 'ビタミンC', amount: 120, unit: 'mg' },
+                { name_ja: 'ビタミンD3', amount: 2000, unit: 'IU' },
+                { name_ja: 'ビタミンE', amount: 30, unit: 'IU' },
+                { name_ja: 'ビタミンB1', amount: 1.5, unit: 'mg' },
+                { name_ja: 'ビタミンB2', amount: 1.7, unit: 'mg' },
+                { name_ja: 'ビタミンB6', amount: 2, unit: 'mg' },
+                { name_ja: 'ビタミンB12', amount: 6, unit: 'mcg' },
+                { name_ja: '葉酸', amount: 400, unit: 'mcg' },
+                { name_ja: 'ナイアシン', amount: 20, unit: 'mg' },
+                { name_ja: 'パントテン酸', amount: 10, unit: 'mg' },
+                { name_ja: 'ビオチン', amount: 30, unit: 'mcg' }
+            ]
+        },
+        {
+            id: 'mock-14',
+            product_name: 'Centrum, Adults Multivitamin & Multimineral, 365 Tablets',
+            brand_name: 'Centrum',
+            serving_size: '1 tablet',
+            ingredients: [
+                { name: 'Multivitamin', ingredientGroup: 'Multivitamin' },
+                { name: 'Multimineral', ingredientGroup: 'Multimineral' }
+            ],
+            nutrients: [
+                { name_ja: 'ビタミンA', amount: 3500, unit: 'IU' },
+                { name_ja: 'ビタミンC', amount: 90, unit: 'mg' },
+                { name_ja: 'ビタミンD3', amount: 1000, unit: 'IU' },
+                { name_ja: 'ビタミンE', amount: 22.5, unit: 'IU' },
+                { name_ja: 'ビタミンK', amount: 25, unit: 'mcg' },
+                { name_ja: 'ビタミンB1', amount: 1.2, unit: 'mg' },
+                { name_ja: 'ビタミンB2', amount: 1.3, unit: 'mg' },
+                { name_ja: 'ビタミンB6', amount: 1.7, unit: 'mg' },
+                { name_ja: 'ビタミンB12', amount: 2.4, unit: 'mcg' },
+                { name_ja: '葉酸', amount: 400, unit: 'mcg' },
+                { name_ja: 'カルシウム', amount: 200, unit: 'mg' },
+                { name_ja: '鉄', amount: 18, unit: 'mg' },
+                { name_ja: 'マグネシウム', amount: 100, unit: 'mg' },
+                { name_ja: '亜鉛', amount: 11, unit: 'mg' }
+            ]
+        },
+        {
+            id: 'mock-15',
+            product_name: 'ONE A DAY, Men\'s Health Formula Multivitamin, 200 Tablets',
+            brand_name: 'ONE A DAY',
+            serving_size: '1 tablet',
+            ingredients: [
+                { name: 'Multivitamin', ingredientGroup: 'Multivitamin' },
+                { name: 'Men\'s Formula', ingredientGroup: 'Men\'s Health' }
+            ],
+            nutrients: [
+                { name_ja: 'ビタミンA', amount: 3500, unit: 'IU' },
+                { name_ja: 'ビタミンC', amount: 90, unit: 'mg' },
+                { name_ja: 'ビタミンD', amount: 700, unit: 'IU' },
+                { name_ja: 'ビタミンE', amount: 22.5, unit: 'IU' },
+                { name_ja: 'ビタミンB1', amount: 1.2, unit: 'mg' },
+                { name_ja: 'ビタミンB6', amount: 1.7, unit: 'mg' },
+                { name_ja: 'ビタミンB12', amount: 2.4, unit: 'mcg' },
+                { name_ja: '葉酸', amount: 300, unit: 'mcg' },
+                { name_ja: 'マグネシウム', amount: 120, unit: 'mg' },
+                { name_ja: '亜鉛', amount: 15, unit: 'mg' },
+                { name_ja: 'セレン', amount: 55, unit: 'mcg' }
+            ]
+        },
+        {
+            id: 'mock-16',
+            product_name: 'Garden of Life, Vitamin Code Raw One for Women, 75 Capsules',
+            brand_name: 'Garden of Life',
+            serving_size: '1 capsule',
+            ingredients: [
+                { name: 'Raw Multivitamin', ingredientGroup: 'Multivitamin' },
+                { name: 'Women\'s Formula', ingredientGroup: 'Women\'s Health' }
+            ],
+            nutrients: [
+                { name_ja: 'ビタミンA', amount: 2500, unit: 'IU' },
+                { name_ja: 'ビタミンC', amount: 120, unit: 'mg' },
+                { name_ja: 'ビタミンD3', amount: 1000, unit: 'IU' },
+                { name_ja: 'ビタミンE', amount: 15, unit: 'IU' },
+                { name_ja: 'ビタミンK', amount: 40, unit: 'mcg' },
+                { name_ja: 'ビタミンB1', amount: 1, unit: 'mg' },
+                { name_ja: 'ビタミンB2', amount: 1, unit: 'mg' },
+                { name_ja: 'ビタミンB6', amount: 1.3, unit: 'mg' },
+                { name_ja: 'ビタミンB12', amount: 2.5, unit: 'mcg' },
+                { name_ja: '葉酸', amount: 400, unit: 'mcg' },
+                { name_ja: '鉄', amount: 18, unit: 'mg' },
+                { name_ja: 'マグネシウム', amount: 25, unit: 'mg' },
+                { name_ja: '亜鉛', amount: 5, unit: 'mg' }
+            ]
+        },
+        {
+            id: 'mock-17',
+            product_name: 'Optimum Nutrition, Opti-Men Multivitamin, 150 Tablets',
+            brand_name: 'Optimum Nutrition',
+            serving_size: '3 tablets',
+            ingredients: [
+                { name: 'Sports Multivitamin', ingredientGroup: 'Sports Nutrition' },
+                { name: 'Amino Acid Blend', ingredientGroup: 'Amino Acids' }
+            ],
+            nutrients: [
+                { name_ja: 'ビタミンA', amount: 5000, unit: 'IU' },
+                { name_ja: 'ビタミンC', amount: 300, unit: 'mg' },
+                { name_ja: 'ビタミンD', amount: 300, unit: 'IU' },
+                { name_ja: 'ビタミンE', amount: 200, unit: 'IU' },
+                { name_ja: 'ビタミンB1', amount: 75, unit: 'mg' },
+                { name_ja: 'ビタミンB2', amount: 75, unit: 'mg' },
+                { name_ja: 'ビタミンB6', amount: 50, unit: 'mg' },
+                { name_ja: 'ビタミンB12', amount: 100, unit: 'mcg' },
+                { name_ja: '葉酸', amount: 400, unit: 'mcg' },
+                { name_ja: 'マグネシウム', amount: 80, unit: 'mg' },
+                { name_ja: '亜鉛', amount: 15, unit: 'mg' }
+            ]
+        },
+        {
+            id: 'mock-18',
+            product_name: 'MegaFood, Women Over 40 One Daily, 60 Tablets',
+            brand_name: 'MegaFood',
+            serving_size: '1 tablet',
+            ingredients: [
+                { name: 'Whole Food Multivitamin', ingredientGroup: 'Whole Food' },
+                { name: 'Women 40+ Formula', ingredientGroup: 'Women\'s Health' }
+            ],
+            nutrients: [
+                { name_ja: 'ビタミンA', amount: 1500, unit: 'IU' },
+                { name_ja: 'ビタミンC', amount: 60, unit: 'mg' },
+                { name_ja: 'ビタミンD3', amount: 1000, unit: 'IU' },
+                { name_ja: 'ビタミンE', amount: 15, unit: 'IU' },
+                { name_ja: 'ビタミンB6', amount: 3, unit: 'mg' },
+                { name_ja: 'ビタミンB12', amount: 8, unit: 'mcg' },
+                { name_ja: '葉酸', amount: 400, unit: 'mcg' },
+                { name_ja: '鉄', amount: 9, unit: 'mg' },
+                { name_ja: 'マグネシウム', amount: 60, unit: 'mg' },
+                { name_ja: '亜鉛', amount: 5, unit: 'mg' }
+            ]
+        },
+        // アミノ酸・特殊成分
+        {
+            id: 'mock-19',
             product_name: 'NOW Foods, L-Carnosine 500mg, 50 Capsules',
             brand_name: 'NOW Foods',
             serving_size: '1 capsule',
@@ -476,7 +628,7 @@ function generateMockSearchResults(searchTerm) {
             nutrients: [{ name_ja: 'カルノシン', amount: 500, unit: 'mg' }]
         },
         {
-            id: 'mock-14',
+            id: 'mock-20',
             product_name: 'Jarrow Formulas, CoQ10 100mg, 60 Capsules',
             brand_name: 'Jarrow Formulas',
             serving_size: '1 capsule',
@@ -484,7 +636,7 @@ function generateMockSearchResults(searchTerm) {
             nutrients: [{ name_ja: 'コエンザイムQ10', amount: 100, unit: 'mg' }]
         },
         {
-            id: 'mock-15',
+            id: 'mock-21',
             product_name: 'Sports Research, Collagen Peptides, 454g Powder',
             brand_name: 'Sports Research',
             serving_size: '1 scoop (11g)',
@@ -527,21 +679,47 @@ function generateMockSearchResults(searchTerm) {
         
         // Translation-based matching
         const translateMap = {
+            // マルチビタミン関連（最重要）
+            'マルチビタミン': 'multivitamin multi vitamin',
+            'マルチ': 'multivitamin multi',
+            '総合ビタミン': 'multivitamin multi vitamin',
+            'オールインワン': 'multivitamin multi all-in-one',
+            
+            // 個別ビタミン類
             'ビタミンc': 'vitamin c',
             'ビタミンd': 'vitamin d',
             'ビタミンe': 'vitamin e',
             'ビタミンb': 'vitamin b',
+            'ビタミンa': 'vitamin a',
+            'ビタミンk': 'vitamin k',
+            
+            // ミネラル類
             'マグネシウム': 'magnesium',
             '亜鉛': 'zinc',
             '鉄': 'iron',
             'カルシウム': 'calcium',
+            'セレン': 'selenium',
+            '銅': 'copper',
+            'マンガン': 'manganese',
+            'クロム': 'chromium',
+            'ヨウ素': 'iodine',
+            
+            // その他重要成分
             'オメガ': 'omega',
             'プロバイオティクス': 'probiotics',
             'カルノシン': 'carnosine',
             'コエンザイムq10': 'coq10',
             'コラーゲン': 'collagen',
             'クルクミン': 'curcumin turmeric',
-            'アシュワガンダ': 'ashwagandha'
+            'アシュワガンダ': 'ashwagandha',
+            
+            // ブランド関連
+            'センタム': 'centrum',
+            'ネイチャーズウェイ': 'nature way',
+            'ナウフーズ': 'now foods',
+            'ドクターズベスト': 'doctor best',
+            'ガーデンオブライフ': 'garden life',
+            'ソルガー': 'solgar'
         };
         
         const translatedTerm = translateMap[searchTermLower];
@@ -551,6 +729,7 @@ function generateMockSearchResults(searchTerm) {
         
         // Partial matching for complex terms
         const partialMatches = [
+            { search: 'multivitamin', terms: ['マルチビタミン', 'マルチ', '総合ビタミン', 'multivitamin', 'multi', 'all-in-one'] },
             { search: 'vitamin', terms: ['ビタミン', 'vitamin'] },
             { search: 'mineral', terms: ['ミネラル', 'mineral', 'magnesium', 'zinc', 'iron', 'calcium'] },
             { search: 'omega', terms: ['オメガ', 'omega', 'fish oil', 'epa', 'dha'] },
@@ -575,6 +754,44 @@ function generateNutrientsFromProductName(productName) {
     
     // Pattern matching for common supplements
     const nutrientPatterns = {
+        // マルチビタミン（最重要パターン）
+        'multivitamin': {
+            multiple: [
+                { name_ja: 'ビタミンA', amount: 3500, unit: 'IU' },
+                { name_ja: 'ビタミンC', amount: 90, unit: 'mg' },
+                { name_ja: 'ビタミンD3', amount: 1000, unit: 'IU' },
+                { name_ja: 'ビタミンE', amount: 22.5, unit: 'IU' },
+                { name_ja: 'ビタミンK', amount: 25, unit: 'mcg' },
+                { name_ja: 'ビタミンB1', amount: 1.2, unit: 'mg' },
+                { name_ja: 'ビタミンB2', amount: 1.3, unit: 'mg' },
+                { name_ja: 'ビタミンB6', amount: 1.7, unit: 'mg' },
+                { name_ja: 'ビタミンB12', amount: 2.4, unit: 'mcg' },
+                { name_ja: '葉酸', amount: 400, unit: 'mcg' },
+                { name_ja: 'ナイアシン', amount: 20, unit: 'mg' },
+                { name_ja: 'パントテン酸', amount: 10, unit: 'mg' },
+                { name_ja: 'ビオチン', amount: 30, unit: 'mcg' },
+                { name_ja: 'カルシウム', amount: 200, unit: 'mg' },
+                { name_ja: '鉄', amount: 18, unit: 'mg' },
+                { name_ja: 'マグネシウム', amount: 100, unit: 'mg' },
+                { name_ja: '亜鉛', amount: 11, unit: 'mg' }
+            ]
+        },
+        'multi': {
+            multiple: [
+                { name_ja: 'ビタミンA', amount: 3500, unit: 'IU' },
+                { name_ja: 'ビタミンC', amount: 90, unit: 'mg' },
+                { name_ja: 'ビタミンD3', amount: 1000, unit: 'IU' },
+                { name_ja: 'ビタミンE', amount: 22.5, unit: 'IU' },
+                { name_ja: 'ビタミンB1', amount: 1.2, unit: 'mg' },
+                { name_ja: 'ビタミンB2', amount: 1.3, unit: 'mg' },
+                { name_ja: 'ビタミンB6', amount: 1.7, unit: 'mg' },
+                { name_ja: 'ビタミンB12', amount: 2.4, unit: 'mcg' },
+                { name_ja: '葉酸', amount: 400, unit: 'mcg' },
+                { name_ja: 'マグネシウム', amount: 100, unit: 'mg' },
+                { name_ja: '亜鉛', amount: 11, unit: 'mg' }
+            ]
+        },
+        // 個別ビタミン
         'vitamin c': { name_ja: 'ビタミンC', amount: 1000, unit: 'mg' },
         'vitamin d': { name_ja: 'ビタミンD3', amount: 5000, unit: 'IU' },
         'vitamin d3': { name_ja: 'ビタミンD3', amount: 5000, unit: 'IU' },
@@ -738,14 +955,7 @@ function updateSelectedCount() {
     document.getElementById('count').textContent = selectedSupplements.length;
 }
 
-// Toggle view mode (per serving vs per unit)
-function toggleViewMode() {
-    viewMode = viewMode === 'serving' ? 'unit' : 'serving';
-    const button = document.getElementById('view-mode-btn');
-    button.textContent = viewMode === 'serving' ? '1日分表示' : '1粒あたり表示';
-    
-    calculateCombinedNutrients();
-}
+// Duplicate function removed - using the main one above
 
 // Initialize the combined nutrients chart
 function initializeCombinedChart() {
@@ -759,8 +969,10 @@ function initializeCombinedChart() {
 // Calculate combined nutrients from selected supplements
 async function calculateCombinedNutrients() {
     console.log('📊 Calculating combined nutrients for', selectedSupplements.length, 'supplements');
+    console.log('📊 Current view mode:', viewMode);
     
     if (selectedSupplements.length === 0) {
+        console.log('📊 No supplements selected, showing placeholders');
         showChartPlaceholder();
         showNutrientsPlaceholder();
         return;
@@ -779,12 +991,19 @@ async function calculateCombinedNutrients() {
                 
                 // Adjust amount based on view mode
                 if (viewMode === 'serving' && supplement.serving_size) {
-                    // serving mode: multiply by serving size to get total daily amount
-                    const servingMatch = supplement.serving_size.match(/(\d+)/);
+                    // serving mode: use the recommended daily amount (per serving)
+                    // Amount is already per serving, so no adjustment needed
+                    // This is the default display mode
+                } else if (viewMode === 'unit') {
+                    // unit mode: show per unit amount
+                    const servingMatch = supplement.serving_size ? supplement.serving_size.match(/(\d+)/) : null;
                     const servingSize = servingMatch ? parseInt(servingMatch[1]) : 1;
-                    amount = amount * servingSize;
+                    if (servingSize > 1) {
+                        amount = amount / servingSize;
+                    }
                 }
-                // unit mode: use amount as-is (per unit)
+                
+                console.log(`📊 Nutrient ${name}: ${amount}${unit} (mode: ${viewMode})`);
                 
                 if (!combinedNutrients[name]) {
                     combinedNutrients[name] = {
@@ -862,8 +1081,13 @@ async function calculateCombinedNutrients() {
         combinedNutrients[name].rdaPercent = Math.min((amount / rda) * 100, 300); // Cap at 300%
     });
     
+    console.log('📊 Final combined nutrients before display:', combinedNutrients);
+    console.log('📊 About to call displayCombinedChart with', Object.keys(combinedNutrients).length, 'nutrients');
+    
     displayCombinedChart(combinedNutrients);
     displayNutrientsBreakdown(combinedNutrients);
+    
+    console.log('📊 calculateCombinedNutrients completed successfully');
 }
 
 // Display combined nutrients chart

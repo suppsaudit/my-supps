@@ -19,25 +19,29 @@
     <link rel="stylesheet" href="css/supps-audit.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="logo">
-                <h1><span>M</span><span>Y</span> <span>S</span><span>U</span><span>P</span><span>P</span><span class="tilted-p">S</span></h1>
-                <p class="tagline">サプリガチヲタのための管理ツール。</p>
+    <header id="main-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h1><span>M</span><span>Y</span> <span>S</span><span>U</span><span>P</span><span>P</span><span class="tilted-p">S</span></h1>
+                    <p class="tagline">サプリガチヲタのための管理ツール。</p>
+                </div>
+                <nav class="navigation">
+                    <a href="index.html" class="nav-link">ホーム</a>
+                    <a href="my-supps.html" class="nav-link">MY SUPPS</a>
+                    <a href="supps-audit.html" class="nav-link active">Supps Audit</a>
+                    <div id="user-menu" class="user-menu"></div>
+                </nav>
             </div>
-            <nav>
-                <a href="index.html" class="nav-link">ホーム</a>
-                <a href="my-supps.html" class="nav-link">MY SUPPS</a>
-                <a href="supps-audit.html" class="nav-link active">Supps Audit</a>
-                <div id="user-menu" class="user-menu"></div>
-            </nav>
-        </header>
+        </div>
+    </header>
 
+    <div class="container">
         <main class="supps-audit">
             <div class="audit-header">
                 <h2>Supps Audit</h2>
                 <div class="view-controls">
-                    <button class="view-mode-toggle" onclick="toggleViewMode()" id="view-mode-btn">1日分表示</button>
+                    <button class="view-mode-toggle" onclick="toggleViewMode()" id="view-mode-btn">1回分表示</button>
                     <span class="selected-count">選択中: <span id="count">0</span>個</span>
                 </div>
             </div>
@@ -108,6 +112,7 @@
         </main>
     </div>
 
+    <script src="js/navigation.js"></script>
     <script src="js/supabase-client.js"></script>
     <script src="js/dsld-api.js"></script>
     <script src="js/advanced-search.js"></script>

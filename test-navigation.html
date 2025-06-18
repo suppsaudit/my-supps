@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigation Test - MY SUPPS</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Add extra height for scrolling */
+        .test-content {
+            height: 2000px;
+            padding: 2rem;
+            background: linear-gradient(to bottom, #f0f0f0, #ffffff);
+        }
+        .test-content h2 {
+            margin-top: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header id="main-header">
+            <div class="header-content">
+                <div class="logo">
+                    <h1><span>M</span><span>Y</span> <span>S</span><span>U</span><span>P</span><span>P</span><span class="tilted-p">S</span></h1>
+                    <p class="tagline">サプリガチヲタのための管理ツール。</p>
+                </div>
+                <nav class="navigation">
+                    <a href="index.html" class="nav-link">ホーム</a>
+                    <a href="my-supps.html" class="nav-link">MY SUPPS</a>
+                    <a href="supps-audit.html" class="nav-link">Supps Audit</a>
+                    <div id="user-menu" class="user-menu"></div>
+                </nav>
+            </div>
+        </header>
+
+        <main class="test-content">
+            <h1>Navigation Test Page</h1>
+            <p>This page has extra height to test the scroll behavior.</p>
+            <p>Try scrolling down to see the navigation collapse.</p>
+            <p>Then scroll up to see it expand again.</p>
+            
+            <h2>Section 1</h2>
+            <p>Keep scrolling...</p>
+            
+            <h2>Section 2</h2>
+            <p>The navigation should collapse when you scroll down past 50px.</p>
+            
+            <h2>Section 3</h2>
+            <p>The navigation should expand when you scroll up.</p>
+            
+            <h2>Section 4</h2>
+            <p>You can also use the pink "Test Collapse" button in the bottom right to manually test the collapse state.</p>
+            
+            <h2>Section 5</h2>
+            <p>Look for console logs to debug any issues.</p>
+        </main>
+    </div>
+
+    <script src="js/navigation.js"></script>
+</body>
+</html>
