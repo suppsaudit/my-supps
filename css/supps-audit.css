@@ -168,17 +168,28 @@
 }
 
 /* Chart Section */
-.audit-content {
-    display: grid;
-    grid-template-columns: 1fr 400px;
-    gap: 3rem;
-    margin-bottom: 3rem;
-}
-
 .chart-section {
+    background: var(--background-card);
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: var(--shadow-card);
+    margin-bottom: 2rem;
     display: flex;
     flex-direction: column;
     align-items: center;
+}
+
+.chart-section h3 {
+    margin-bottom: 1.5rem;
+    text-align: center;
+    color: var(--text-primary);
+}
+
+.audit-content {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 3rem;
+    margin-bottom: 3rem;
 }
 
 .chart-container {

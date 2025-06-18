@@ -791,7 +791,8 @@ function displayCombinedChart(nutrients) {
     console.log('📈 Displaying chart with nutrients:', nutrients);
     
     const canvas = document.getElementById('combined-chart');
-    const chartSection = document.getElementById('chart-section');
+    const placeholder = document.getElementById('chart-placeholder');
+    const legend = document.getElementById('chart-legend');
     
     if (Object.keys(nutrients).length === 0) {
         console.log('⚠️ No nutrients to display');
@@ -799,8 +800,10 @@ function displayCombinedChart(nutrients) {
         return;
     }
     
-    // Show chart section
-    chartSection.style.display = 'block';
+    // Hide placeholder and show chart
+    if (placeholder) placeholder.style.display = 'none';
+    if (legend) legend.style.display = 'block';
+    canvas.style.display = 'block';
     
     const ctx = canvas.getContext('2d');
     
@@ -945,11 +948,13 @@ function displayNutrientsBreakdown(nutrients) {
 
 // Show chart placeholder
 function showChartPlaceholder() {
-    const chartSection = document.getElementById('chart-section');
+    const canvas = document.getElementById('combined-chart');
+    const placeholder = document.getElementById('chart-placeholder');
+    const legend = document.getElementById('chart-legend');
     
-    if (chartSection) {
-        chartSection.style.display = 'none';
-    }
+    if (canvas) canvas.style.display = 'none';
+    if (placeholder) placeholder.style.display = 'block';
+    if (legend) legend.style.display = 'none';
     
     if (combinedChart) {
         combinedChart.destroy();
