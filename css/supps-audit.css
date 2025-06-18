@@ -261,11 +261,11 @@
 }
 
 .legend-item.current .color-indicator {
-    background: var(--primary-color);
+    background: rgba(255, 20, 147, 1); /* ピンク - チャートと同じ色 */
 }
 
 .legend-item.recommended .color-indicator {
-    background: var(--success-color);
+    background: rgba(0, 206, 209, 0.8); /* 水色 - チャートと同じ色 */
 }
 
 .legend-item.excessive .color-indicator {

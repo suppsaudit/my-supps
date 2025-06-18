@@ -922,12 +922,7 @@ function displayCombinedChart(nutrients) {
             },
             plugins: {
                 legend: {
-                    position: 'bottom',
-                    labels: {
-                        color: '#fff',
-                        usePointStyle: true,
-                        padding: 20
-                    }
+                    display: false // 自動凡例を無効化
                 },
                 tooltip: {
                     filter: function(tooltipItem) {
