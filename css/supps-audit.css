@@ -195,15 +195,17 @@
 .chart-container {
     width: 100%;
     max-width: 500px;
-    margin-bottom: 2rem;
+    margin: 0 auto 2rem auto;
     position: relative;
-    min-height: 500px;
+    aspect-ratio: 1 / 1; /* 正方形を維持 */
 }
 
 #combined-chart {
     position: absolute;
     top: 0;
     left: 0;
+    width: 100% !important;
+    height: 100% !important;
     z-index: 2;
 }
 
@@ -211,11 +213,11 @@
     position: absolute;
     top: 0;
     left: 0;
+    width: 100%;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 500px;
-    height: 500px;
     background: #f3f4f6;
     border: 2px dashed #d1d5db;
     border-radius: 20px;
@@ -270,6 +272,69 @@
 
 .legend-item.excessive .color-indicator {
     background: var(--danger-color);
+}
+
+/* スマホ対応 */
+@media (max-width: 768px) {
+    .chart-section {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .chart-container {
+        max-width: 100%;
+        margin: 0 auto 1rem auto;
+    }
+    
+    .placeholder-content {
+        padding: 1rem;
+    }
+    
+    .placeholder-content h4 {
+        font-size: 1rem;
+    }
+    
+    .placeholder-content p {
+        font-size: 0.875rem;
+        line-height: 1.5;
+    }
+    
+    .chart-legend {
+        gap: 1rem;
+        padding: 0 1rem;
+    }
+    
+    .legend-item {
+        font-size: 0.75rem;
+    }
+    
+    .search-section {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .audit-content {
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .chart-section h3 {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+    }
+    
+    .chart-container {
+        max-width: calc(100vw - 2rem);
+    }
+    
+    .placeholder-content h4 {
+        font-size: 0.875rem;
+    }
+    
+    .placeholder-content p {
+        font-size: 0.75rem;
+    }
 }
 
 /* Nutrients Breakdown */

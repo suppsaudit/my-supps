@@ -889,6 +889,12 @@ function displayCombinedChart(nutrients) {
         data.push(0);
     }
     
+    // レスポンシブ対応：画面サイズに応じてCanvasサイズを調整
+    const container = canvas.parentElement;
+    const containerSize = Math.min(container.offsetWidth, container.offsetHeight, 500);
+    canvas.width = containerSize;
+    canvas.height = containerSize;
+    
     combinedChart = new Chart(ctx, {
         type: 'radar',
         data: {
@@ -919,7 +925,7 @@ function displayCombinedChart(nutrients) {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: true,
+            maintainAspectRatio: false,
             scales: {
                 r: {
                     beginAtZero: true,
