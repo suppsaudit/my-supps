@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>サプリメント一覧 - MY SUPPS | Data Drivenなサプリメント管理</title>
+    <meta name="description" content="100種類以上のサプリメントを比較検討。ビタミンC、オメガ3、マグネシウムなど人気商品を栄養成分データで選ぶ。">
+    <meta name="keywords" content="サプリメント,比較,ランキング,ビタミン,ミネラル,オメガ3,プロテイン,NIH,DSLD">
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Supabase CDN v2 -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- App Configuration -->
+    <script src="js/config.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/products.css">
+    
+    <!-- Structured Data for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": "サプリメント一覧",
+        "description": "Data Drivenなサプリメント選択のための総合カタログ",
+        "url": "https://my-supps.com/products.html",
+        "mainEntity": {
+            "@type": "ItemList",
+            "numberOfItems": "100+",
+            "itemListElement": []
+        }
+    }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <h1><span>M</span><span>Y</span> <span>S</span><span>U</span><span>P</span><span>P</span><span class="tilted-p">S</span></h1>
+                <p class="tagline">サプリメントをData Drivenに管理するなら。</p>
+            </div>
+            <nav>
+                <a href="index.html" class="nav-link">ホーム</a>
+                <a href="products.html" class="nav-link active">商品一覧</a>
+                <a href="my-supps.html" class="nav-link">MY SUPPS</a>
+                <a href="supps-audit.html" class="nav-link">Supps Audit</a>
+                <div id="user-menu" class="user-menu"></div>
+            </nav>
+        </header>
+
+        <main class="products-page">
+            <div class="page-header">
+                <h2>サプリメント一覧</h2>
+                <p class="page-description">NIH DSLD（Dietary Supplement Label Database）統合による科学的なサプリメント比較</p>
+                <div style="background: #E8F5E8; border: 1px solid #C3E6C3; padding: 1rem; border-radius: 10px; margin: 1rem 0; font-size: 0.9rem; color: #2E7D32;">
+                    <strong>🧬 データソース:</strong> 米国国立衛生研究所（NIH）のDSLDデータベースから取得した科学的に検証されたサプリメント情報を表示します。
+                </div>
+                
+                <div class="stats-bar">
+                    <div class="stat-item">
+                        <span class="stat-number" id="total-products">-</span>
+                        <span class="stat-label">商品数</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="total-categories">-</span>
+                        <span class="stat-label">カテゴリ</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="total-brands">-</span>
+                        <span class="stat-label">ブランド</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="avg-rating">-</span>
+                        <span class="stat-label">平均評価</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filters-section">
+                <div class="search-bar">
+                    <div class="search-input-group">
+                        <select id="search-type" class="search-type-select">
+                            <option value="all">全て</option>
+                            <option value="product">商品名</option>
+                            <option value="brand">ブランド</option>
+                            <option value="ingredient">成分</option>
+                        </select>
+                        <input type="text" id="search-input" placeholder="商品名、ブランド、栄養素で検索...">
+                        <button class="search-btn" onclick="performSearch()">🔍</button>
+                    </div>
+                </div>
+                
+                <div class="filter-tabs">
+                    <button class="filter-tab active" onclick="filterByTab('all')">すべて</button>
+                    <button class="filter-tab" onclick="filterByTab('vitamins')">ビタミン</button>
+                    <button class="filter-tab" onclick="filterByTab('minerals')">ミネラル</button>
+                    <button class="filter-tab" onclick="filterByTab('omega')">オメガ3</button>
+                    <button class="filter-tab" onclick="filterByTab('probiotics')">プロバイオティクス</button>
+                </div>
+                
+                <div class="filter-dropdowns">
+                    <select id="category-filter" onchange="applyFilters()">
+                        <option value="">すべてのカテゴリ</option>
+                        <option value="vitamins">ビタミン類</option>
+                        <option value="minerals">ミネラル類</option>
+                        <option value="omega">オメガ脂肪酸</option>
+                        <option value="amino-acids">アミノ酸</option>
+                        <option value="herbs">ハーブ類</option>
+                        <option value="probiotics">プロバイオティクス</option>
+                    </select>
+                    
+                    <select id="brand-filter" onchange="applyFilters()">
+                        <option value="">すべてのブランド</option>
+                    </select>
+                    
+                    <select id="serving-filter" onchange="applyFilters()">
+                        <option value="">摂取形態</option>
+                        <option value="capsule">カプセル</option>
+                        <option value="tablet">タブレット</option>
+                        <option value="softgel">ソフトジェル</option>
+                        <option value="powder">パウダー</option>
+                        <option value="liquid">リキッド</option>
+                    </select>
+                    
+                    <select id="sort-filter" onchange="applyFilters()">
+                        <option value="name">名前順</option>
+                        <option value="brand">ブランド順</option>
+                        <option value="category">カテゴリ順</option>
+                        <option value="serving">摂取量順</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="products-grid" id="products-grid">
+                <div class="loading-placeholder">
+                    <p>商品データを読み込み中...</p>
+                </div>
+            </div>
+
+            <div class="pagination" id="pagination">
+                <!-- ページネーションボタンが動的に生成されます -->
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 MY SUPPS. All rights reserved.</p>
+            <p class="disclaimer">本サービスは医療アドバイスではありません。健康に関する決定は医療専門家にご相談ください。</p>
+        </footer>
+    </div>
+
+    <script src="js/supabase-client.js"></script>
+    <script src="js/dsld-api.js"></script>
+    <script src="js/advanced-search.js"></script>
+    <script src="js/products-page.js"></script>
+</body>
+</html>

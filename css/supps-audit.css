@@ -1,0 +1,627 @@
+/* Supps Audit Page Styles */
+
+.supps-audit {
+    padding: 2rem 0;
+}
+
+.audit-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.audit-header h2 {
+    font-size: 2.5rem;
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 1rem;
+}
+
+.audit-description {
+    color: var(--text-secondary);
+    font-size: 1.125rem;
+    margin-bottom: 2rem;
+}
+
+.view-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+}
+
+.selected-count {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Search Section */
+.search-section {
+    background: var(--background-card);
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: var(--shadow-card);
+    margin-bottom: 2rem;
+}
+
+.search-section h3 {
+    margin-bottom: 1.5rem;
+}
+
+.search-container {
+    margin-bottom: 1.5rem;
+}
+
+.search-input-group {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.search-type-select {
+    padding: 0.75rem;
+    border: 2px solid var(--border-light);
+    border-radius: 10px;
+    font-size: 1rem;
+    background: var(--background-main);
+    color: var(--text-primary);
+    min-width: 120px;
+}
+
+.search-type-select:focus {
+    outline: none;
+    border-color: rgba(255, 20, 147, 0.5);
+}
+
+.search-input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-light);
+    border-radius: 50px;
+    font-size: 1rem;
+    background: var(--background-main);
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: transparent;
+    box-shadow: 0 0 0 3px rgba(255, 20, 147, 0.1);
+}
+
+.search-results {
+    display: grid;
+    gap: 1rem;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.search-result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--background-light);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.search-result-item:hover {
+    background: var(--background-main);
+    transform: translateX(5px);
+}
+
+.search-result-item.selected {
+    background: linear-gradient(135deg, rgba(255, 20, 147, 0.2), rgba(0, 206, 209, 0.2));
+    border: 1px solid rgba(255, 20, 147, 0.3);
+}
+
+.supplement-info h4 {
+    margin-bottom: 0.25rem;
+    color: var(--text-primary);
+}
+
+.supplement-info p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin: 0.25rem 0;
+}
+
+.serving-info {
+    font-style: italic;
+    color: var(--text-muted);
+}
+
+.selection-btn {
+    background: var(--gradient-1);
+    color: white;
+    border: none;
+    padding: 0.5rem 1.5rem;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    animation: gradientShift var(--animation-duration) ease-in-out infinite;
+    background-size: 400% 400%;
+}
+
+.selection-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.selection-btn.selected {
+    background: var(--danger-color);
+    animation: none;
+}
+
+.loading, .error, .no-results {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.error {
+    color: var(--danger-color);
+}
+
+/* Chart Section */
+.audit-content {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 3rem;
+    margin-bottom: 3rem;
+}
+
+.chart-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.chart-container {
+    width: 100%;
+    max-width: 500px;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.chart-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 500px;
+    height: 500px;
+    background: var(--background-light);
+    border: 2px dashed var(--border-light);
+    border-radius: 20px;
+    margin: 0 auto;
+}
+
+.placeholder-content {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 2rem;
+}
+
+.placeholder-content h4 {
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.placeholder-content p {
+    line-height: 1.6;
+}
+
+.chart-legend {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.color-indicator {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+}
+
+.legend-item.current .color-indicator {
+    background: var(--primary-color);
+}
+
+.legend-item.recommended .color-indicator {
+    background: var(--success-color);
+}
+
+.legend-item.excessive .color-indicator {
+    background: var(--danger-color);
+}
+
+/* Nutrients Breakdown */
+.nutrients-breakdown {
+    background: var(--background-card);
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: var(--shadow-card);
+}
+
+.nutrients-breakdown h3 {
+    margin-bottom: 1.5rem;
+}
+
+.nutrients-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.nutrient-item {
+    padding: 1.5rem;
+    background: var(--background-light);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.nutrient-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.nutrient-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.nutrient-header h4 {
+    color: var(--primary-color);
+    font-weight: 600;
+    margin: 0;
+}
+
+.nutrient-percent {
+    font-size: 1.125rem;
+    font-weight: 700;
+}
+
+.nutrient-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.nutrient-amount {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.nutrient-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--background-main);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.nutrient-fill {
+    height: 100%;
+    background: var(--gradient-1);
+    border-radius: 4px;
+    transition: width 0.8s ease;
+    animation: gradientShift var(--animation-duration) ease-in-out infinite;
+    background-size: 400% 400%;
+}
+
+.nutrient-item.low .nutrient-percent {
+    color: var(--danger-color);
+}
+
+.nutrient-item.low .nutrient-fill {
+    background: var(--danger-color);
+    animation: none;
+}
+
+.nutrient-item.moderate .nutrient-percent {
+    color: var(--warning-color);
+}
+
+.nutrient-item.moderate .nutrient-fill {
+    background: var(--warning-color);
+    animation: none;
+}
+
+.nutrient-item.adequate .nutrient-percent {
+    color: var(--success-color);
+}
+
+.nutrient-item.adequate .nutrient-fill {
+    background: var(--success-color);
+    animation: none;
+}
+
+/* Selected Supplements Section */
+.selected-supplements {
+    background: var(--background-card);
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: var(--shadow-card);
+}
+
+.selected-supplements h3 {
+    margin-bottom: 1.5rem;
+}
+
+.selected-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.selected-supplement-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--background-light);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.selected-supplement-item:hover {
+    background: var(--background-main);
+    transform: translateX(5px);
+}
+
+.supplement-details h4 {
+    margin: 0 0 0.25rem 0;
+    color: var(--text-primary);
+}
+
+.supplement-details p {
+    margin: 0.25rem 0;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.supplement-details .serving {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.remove-btn {
+    background: transparent;
+    border: 1px solid var(--danger-color);
+    color: var(--danger-color);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.remove-btn:hover {
+    background: var(--danger-color);
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Adjust Stack Section */
+.adjust-stack {
+    background: var(--background-light);
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 3rem;
+}
+
+.adjust-stack h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.stack-description {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+}
+
+.supplement-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.supplement-card {
+    background: var(--background-dark);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    border: 2px solid transparent;
+}
+
+.supplement-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.supplement-card.selected {
+    background: linear-gradient(45deg, #ff6b9d, #ff8fab);
+    transform: scale(1.05);
+    box-shadow: 0 8px 24px rgba(255, 107, 157, 0.4);
+    border-color: var(--primary-color);
+}
+
+.supplement-card.unselected {
+    filter: grayscale(100%);
+    opacity: 0.6;
+}
+
+.supplement-card img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    background: white;
+    border-radius: 8px;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.supplement-card h4 {
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+}
+
+.card-brand {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+}
+
+.nutrient-preview {
+    font-size: 0.75rem;
+    color: var(--primary-color);
+    background: rgba(255, 107, 157, 0.1);
+    padding: 0.5rem;
+    border-radius: 6px;
+}
+
+/* Warnings Section */
+.warnings-section {
+    background: linear-gradient(45deg, rgba(255, 68, 68, 0.1), rgba(255, 193, 7, 0.1));
+    border: 1px solid var(--warning-color);
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 3rem;
+}
+
+.warnings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.warning-item {
+    display: flex;
+    align-items: start;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 68, 68, 0.1);
+    border-radius: 8px;
+}
+
+.warning-icon {
+    color: var(--warning-color);
+    font-size: 1.25rem;
+    margin-top: 0.25rem;
+}
+
+.warning-content h4 {
+    color: var(--warning-color);
+    margin-bottom: 0.5rem;
+}
+
+/* Actions Section */
+.actions-section {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--text-secondary);
+}
+
+.btn-outline:hover {
+    background: var(--text-secondary);
+    color: var(--background-dark);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-secondary);
+}
+
+.empty-state h3 {
+    margin-bottom: 1rem;
+}
+
+.empty-state p {
+    margin-bottom: 2rem;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .audit-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .chart-container {
+        max-width: 400px;
+    }
+}
+
+@media (max-width: 768px) {
+    .audit-header h2 {
+        font-size: 2rem;
+    }
+    
+    .view-controls {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .chart-legend {
+        gap: 1rem;
+    }
+    
+    .supplement-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+    
+    .actions-section {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .actions-section .btn {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+/* Animation for selection */
+@keyframes selectPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1.05); }
+}
+
+.supplement-card.selecting {
+    animation: selectPop 0.3s ease;
+}

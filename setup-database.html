@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Setup - MY SUPPS</title>
+    
+    <!-- Supabase CDN v2 -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- App Configuration -->
+    <script src="js/config.js"></script>
+    
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background: #1a1a1a; 
+            color: white; 
+        }
+        .log { 
+            background: #2a2a2a; 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+            font-family: monospace; 
+        }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .warning { color: #FF9800; }
+        button {
+            background: #ff6b9d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover { background: #ff8fab; }
+    </style>
+</head>
+<body>
+    <h1>MY SUPPS - Database Setup</h1>
+    <p>このページでは、MY SUPPSアプリケーションに必要なデータベーステーブルの存在を確認し、作成します。</p>
+    
+    <button onclick="checkDatabase()">データベース状態をチェック</button>
+    <button onclick="testConnection()">接続テスト</button>
+    
+    <div id="log-container"></div>
+
+    <script src="js/supabase-client.js"></script>
+    
+    <script>
+        let currentUser = null;
+        
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('log-container');
+            const logElement = document.createElement('div');
+            logElement.className = `log ${type}`;
+            logElement.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.appendChild(logElement);
+            console.log(message);
+        }
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Wait for Supabase client initialization
+            let attempts = 0;
+            while (!window.supabaseClient && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            
+            if (window.supabaseClient) {
+                log('Supabaseクライアントが初期化されました', 'success');
+                
+                // Check authentication
+                try {
+                    const { data: { user } } = await window.supabaseClient.auth.getUser();
+                    if (user) {
+                        currentUser = user;
+                        log(`ログイン中: ${user.email}`, 'success');
+                    } else {
+                        log('ログインが必要です。まずauth.htmlでログインしてください。', 'warning');
+                    }
+                } catch (error) {
+                    log(`認証チェック失敗: ${error.message}`, 'error');
+                }
+            } else {
+                log('Supabaseクライアントの初期化に失敗しました', 'error');
+            }
+        });
+        
+        async function testConnection() {
+            try {
+                log('Supabase接続テスト開始...');
+                
+                if (!window.supabaseClient) {
+                    log('Supabaseクライアントが利用できません', 'error');
+                    return;
+                }
+                
+                // Simple query to test connection
+                const { data, error } = await window.supabaseClient
+                    .from('auth.users')
+                    .select('id')
+                    .limit(1);
+                
+                if (error) {
+                    log(`接続テスト失敗: ${error.message}`, 'error');
+                } else {
+                    log('Supabase接続成功', 'success');
+                }
+            } catch (error) {
+                log(`接続テストエラー: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkDatabase() {
+            try {
+                log('データベーステーブル存在チェック開始...');
+                
+                if (!window.supabaseClient) {
+                    log('Supabaseクライアントが利用できません', 'error');
+                    return;
+                }
+                
+                // Check supplements table
+                try {
+                    const { data, error } = await window.supabaseClient
+                        .from('supplements')
+                        .select('id')
+                        .limit(1);
+                    
+                    if (error) {
+                        log(`supplementsテーブル: ${error.message}`, 'error');
+                    } else {
+                        log('supplementsテーブル: 存在します', 'success');
+                        log(`  レコード数確認中...`);
+                        const { count } = await window.supabaseClient
+                            .from('supplements')
+                            .select('*', { count: 'exact', head: true });
+                        log(`  レコード数: ${count || 0}件`);
+                    }
+                } catch (testError) {
+                    log(`supplementsテーブルテスト失敗: ${testError.message}`, 'error');
+                }
+                
+                // Check user_supplements table
+                try {
+                    const { data, error } = await window.supabaseClient
+                        .from('user_supplements')
+                        .select('user_id')
+                        .limit(1);
+                    
+                    if (error) {
+                        log(`user_supplementsテーブル: ${error.message}`, 'error');
+                    } else {
+                        log('user_supplementsテーブル: 存在します', 'success');
+                        const { count } = await window.supabaseClient
+                            .from('user_supplements')
+                            .select('*', { count: 'exact', head: true });
+                        log(`  レコード数: ${count || 0}件`);
+                    }
+                } catch (testError) {
+                    log(`user_supplementsテーブルテスト失敗: ${testError.message}`, 'error');
+                }
+                
+                // Check nutrients table
+                try {
+                    const { data, error } = await window.supabaseClient
+                        .from('nutrients')
+                        .select('id')
+                        .limit(1);
+                    
+                    if (error) {
+                        log(`nutrientsテーブル: ${error.message}`, 'error');
+                    } else {
+                        log('nutrientsテーブル: 存在します', 'success');
+                        const { count } = await window.supabaseClient
+                            .from('nutrients')
+                            .select('*', { count: 'exact', head: true });
+                        log(`  レコード数: ${count || 0}件`);
+                    }
+                } catch (testError) {
+                    log(`nutrientsテーブルテスト失敗: ${testError.message}`, 'error');
+                }
+                
+                // Check supplement_nutrients table
+                try {
+                    const { data, error } = await window.supabaseClient
+                        .from('supplement_nutrients')
+                        .select('id')
+                        .limit(1);
+                    
+                    if (error) {
+                        log(`supplement_nutrientsテーブル: ${error.message}`, 'error');
+                    } else {
+                        log('supplement_nutrientsテーブル: 存在します', 'success');
+                        const { count } = await window.supabaseClient
+                            .from('supplement_nutrients')
+                            .select('*', { count: 'exact', head: true });
+                        log(`  レコード数: ${count || 0}件`);
+                    }
+                } catch (testError) {
+                    log(`supplement_nutrientsテーブルテスト失敗: ${testError.message}`, 'error');
+                }
+                
+                log('データベースチェック完了');
+                log('');
+                log('❌ エラーが表示された場合は、以下の手順でテーブルを作成してください:');
+                log('1. Supabaseダッシュボードにログイン');
+                log('2. SQL Editorを開く');
+                log('3. create-tables.sqlの内容をコピー&ペースト');
+                log('4. 実行ボタンをクリック');
+                
+            } catch (error) {
+                log(`チェック処理エラー: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

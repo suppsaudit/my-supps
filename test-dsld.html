@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSLD API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; background: #f0f0f0; }
+        button { padding: 10px 20px; margin: 5px; }
+        #results { max-height: 400px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>DSLD API Test</h1>
+    
+    <div>
+        <input type="text" id="searchInput" placeholder="Search term (e.g., vitamin c)" value="vitamin c">
+        <button onclick="testSearch()">Test Search</button>
+        <button onclick="testJapaneseSearch()">Test Japanese Search (ビタミンC)</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script src="js/dsld-api.js"></script>
+    <script>
+        async function testSearch() {
+            const searchTerm = document.getElementById('searchInput').value;
+            const resultsDiv = document.getElementById('results');
+            
+            resultsDiv.innerHTML = '<div>Searching...</div>';
+            
+            try {
+                console.log('Testing DSLD API search for:', searchTerm);
+                
+                const results = await window.dsldApi.searchProducts(searchTerm, { limit: 5 });
+                console.log('DSLD API Results:', results);
+                
+                if (results && results.hits && results.hits.length > 0) {
+                    resultsDiv.innerHTML = `
+                        <h3>Found ${results.hits.length} products:</h3>
+                        ${results.hits.map(hit => `
+                            <div class="result">
+                                <strong>${hit._source.product_name || hit._source.fullName}</strong><br>
+                                Brand: ${hit._source.brand_name || hit._source.brandName}<br>
+                                ID: ${hit._source.id || hit._id}
+                            </div>
+                        `).join('')}
+                    `;
+                } else {
+                    resultsDiv.innerHTML = '<div>No results found</div>';
+                }
+            } catch (error) {
+                console.error('Search failed:', error);
+                resultsDiv.innerHTML = `<div style="color: red;">Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function testJapaneseSearch() {
+            document.getElementById('searchInput').value = 'ビタミンC';
+            await testSearch();
+        }
+        
+        // Test on page load
+        window.addEventListener('load', () => {
+            console.log('DSLD API loaded:', !!window.dsldApi);
+            testSearch();
+        });
+    </script>
+</body>
+</html>

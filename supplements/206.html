@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jarrow Formulas カルシウム・マグネシウム - MY SUPPS</title>
+    <meta name="description" content="Jarrow Formulas カルシウム・マグネシウムの詳細な栄養成分データと科学的分析">
+    <meta name="keywords" content="Jarrow Formulas カルシウム・マグネシウム,Jarrow Formulas,サプリメント,栄養成分,DSLD,科学的データ,レーダーチャート">
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Supabase CDN v2 -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/supplement-detail.css">
+    
+    <!-- Structured Data for SEO -->
+    <script type="application/ld+json">
+    {
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "Jarrow Formulas カルシウム・マグネシウム",
+  "description": "Jarrow Formulas カルシウム・マグネシウムの詳細な栄養成分データと科学的分析",
+  "brand": {
+    "@type": "Brand",
+    "name": "Jarrow Formulas"
+  },
+  "offers": {
+    "@type": "Offer",
+    "availability": "https://schema.org/InStock"
+  }
+}
+    </script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <h1><span>M</span><span>Y</span> <span>S</span><span>U</span><span>P</span><span>P</span><span class="tilted-p">S</span></h1>
+                <p class="tagline">サプリガチヲタのための管理ツール。</p>
+            </div>
+            <nav>
+                <a href="../index.html" class="nav-link">ホーム</a>
+                <a href="../products.html" class="nav-link">商品一覧</a>
+                <a href="../my-supps.html" class="nav-link">MY SUPPS</a>
+                <a href="../supps-audit.html" class="nav-link">Supps Audit</a>
+                <div id="user-menu" class="user-menu"></div>
+            </nav>
+        </header>
+
+        <main class="supplement-detail">
+            <div class="supplement-content">
+                <!-- Breadcrumb -->
+                <nav class="breadcrumb">
+                    <a href="../products.html">商品一覧</a>
+                    <span class="separator">></span>
+                    <span>ミネラル</span>
+                    <span class="separator">></span>
+                    <span>Jarrow Formulas カルシウム・マグネシウム</span>
+                </nav>
+
+                <!-- Product Header -->
+                <div class="product-header">
+                    <div class="product-image-section">
+                        <div class="product-image">
+                            <img src="https://s3.images-iherb.com/now/now00547/y/17.jpg" alt="Jarrow Formulas カルシウム・マグネシウム" class="supplement-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                 <div class="category-icon-fallback minerals" style="display: none;">⚡</div>
+                            <div class="brand-badge">Jarrow Formulas</div>
+                        </div>
+                        <div class="product-actions">
+                            <button onclick="addToMySupps('206')" class="btn btn-primary">
+                                <span class="btn-icon">➕</span>
+                                MY SUPPSに追加
+                            </button>
+                            <button onclick="addToSuppsAudit('206')" class="btn btn-secondary">
+                                <span class="btn-icon">📊</span>
+                                Supps Auditで分析
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="product-info-section">
+                        <div class="product-title">
+                            <h1>Jarrow Formulas カルシウム・マグネシウム</h1>
+                            <p class="brand-name">Jarrow Formulas</p>
+                        </div>
+                        
+                        <div class="product-meta">
+                            <div class="meta-item">
+                                <span class="meta-label">カテゴリ</span>
+                                <span class="meta-value">ミネラル</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">摂取形態</span>
+                                <span class="meta-value">タブレット</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">摂取量</span>
+                                <span class="meta-value">3錠</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">データソース</span>
+                                <span class="meta-value">NIH DSLD</span>
+                            </div>
+                        </div>
+                        
+                        <div class="serving-toggle">
+                            <label class="toggle-label">表示単位:</label>
+                            <div class="toggle-buttons">
+                                <button id="serving-btn-206" class="toggle-btn active" onclick="toggleServingMode('206', 'serving')">1日分</button>
+                                <button id="unit-btn-206" class="toggle-btn" onclick="toggleServingMode('206', 'unit')">1粒あたり</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nutrients Analysis -->
+                <div class="nutrients-analysis">
+                    <div class="chart-section">
+                        <div class="section-header">
+                            <h2>栄養成分レーダーチャート</h2>
+                            <p class="section-description">推奨摂取量（RDA）に対する割合を可視化</p>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="nutrients-chart-206" width="500" height="500"></canvas>
+                        </div>
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <span class="color-indicator current"></span>
+                                <span>現在の摂取量</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="color-indicator recommended"></span>
+                                <span>推奨摂取量 (100%)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="nutrients-breakdown">
+                        <div class="section-header">
+                            <h2>栄養成分詳細</h2>
+                            <p class="section-description">各栄養素の含有量と推奨摂取量に対する割合</p>
+                        </div>
+                        <div class="nutrients-list">
+                            
+            <div class="nutrient-item low">
+                <div class="nutrient-header">
+                    <span class="nutrient-name">カルシウム</span>
+                    <span class="nutrient-percent">27%</span>
+                </div>
+                <div class="nutrient-details">
+                    <span class="nutrient-amount">216.2 mg</span>
+                    <div class="nutrient-bar">
+                        <div class="nutrient-fill" style="width: 27.02923401479626%"></div>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="nutrient-item low">
+                <div class="nutrient-header">
+                    <span class="nutrient-name">マグネシウム</span>
+                    <span class="nutrient-percent">49%</span>
+                </div>
+                <div class="nutrient-details">
+                    <span class="nutrient-amount">195.5 mg</span>
+                    <div class="nutrient-bar">
+                        <div class="nutrient-fill" style="width: 48.8685308934857%"></div>
+                    </div>
+                </div>
+            </div>
+        
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 MY SUPPS. All rights reserved.</p>
+            <p class="disclaimer">本サービスは医療アドバイスではありません。健康に関する決定は医療専門家にご相談ください。</p>
+        </footer>
+    </div>
+
+    <!-- Embedded Product Data -->
+    <script>
+        window.currentProductData = {
+  "id": "206",
+  "dsld_id": "DSLD_206",
+  "name_en": "Jarrow Formulas Calcium Magnesium",
+  "name_ja": "Jarrow Formulas カルシウム・マグネシウム",
+  "brand": "Jarrow Formulas",
+  "category": "minerals",
+  "serving_form": "tablet",
+  "serving_size": 3,
+  "nutrients": [
+    {
+      "name_ja": "カルシウム",
+      "amount": 216.23387211837007,
+      "unit": "mg"
+    },
+    {
+      "name_ja": "マグネシウム",
+      "amount": 195.4741235739428,
+      "unit": "mg"
+    }
+  ],
+  "image_url": "https://s3.images-iherb.com/now/now00547/y/17.jpg",
+  "label_url": "https://dsldapi.od.nih.gov/labels/products/206/label.pdf",
+  "popularity_score": 74.55021037250873,
+  "created_at": "2024-06-23T20:04:48.325Z"
+};
+    </script>
+    
+    <script src="../js/supabase-client.js"></script>
+    <script src="../js/dsld-api.js"></script>
+    <script src="../js/static-supplement-detail.js"></script>
+</body>
+</html>

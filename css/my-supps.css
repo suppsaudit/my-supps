@@ -1,0 +1,314 @@
+/* My Supps Page Styles */
+
+.my-supps-page {
+    padding: 2rem 0;
+    min-height: calc(100vh - 200px);
+}
+
+/* Auth Check Message */
+.auth-check-message {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--background-card);
+    border-radius: 20px;
+    box-shadow: var(--shadow-card);
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.auth-check-message h2 {
+    margin-bottom: 1rem;
+}
+
+.auth-check-message p {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+}
+
+/* Page Header */
+.page-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.page-header h2 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    background: var(--gradient-1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradientShift var(--animation-duration) ease-in-out infinite;
+    background-size: 400% 400%;
+}
+
+.page-description {
+    color: var(--text-secondary);
+    font-size: 1.125rem;
+}
+
+/* Add Supplement Section */
+.add-supplement-section {
+    background: var(--background-card);
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: var(--shadow-card);
+    margin-bottom: 2rem;
+}
+
+.add-supplement-section h3 {
+    margin-bottom: 1.5rem;
+}
+
+.search-container {
+    margin-bottom: 1.5rem;
+}
+
+.search-input-group {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.search-type-select {
+    padding: 0.75rem;
+    border: 2px solid var(--border-light);
+    border-radius: 10px;
+    font-size: 1rem;
+    background: var(--background-main);
+    min-width: 120px;
+}
+
+.search-type-select:focus {
+    outline: none;
+    border-color: rgba(255, 20, 147, 0.5);
+}
+
+.search-input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-light);
+    border-radius: 50px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: transparent;
+    box-shadow: 0 0 0 3px rgba(255, 20, 147, 0.1);
+}
+
+.search-suggestions {
+    background: var(--background-card);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    position: relative;
+    z-index: 10;
+}
+
+.suggestion-item {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background: var(--background-light);
+}
+
+.suggestion-item .suggestion-type {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.suggestion-item .suggestion-text {
+    font-weight: 500;
+    margin-top: 0.25rem;
+}
+
+.search-results {
+    display: grid;
+    gap: 1rem;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.search-result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--background-light);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.search-result-item:hover {
+    background: var(--background-main);
+    transform: translateX(5px);
+}
+
+.supplement-info h4 {
+    margin-bottom: 0.25rem;
+}
+
+.supplement-info p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+/* My Supplements Section */
+.my-supplements-section {
+    background: var(--background-card);
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: var(--shadow-card);
+    margin-bottom: 2rem;
+}
+
+.supplements-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.supplements-stats span {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.supplements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.supplement-card {
+    background: var(--background-light);
+    padding: 1.5rem;
+    border-radius: 15px;
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.supplement-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.supplement-card.selected {
+    background: linear-gradient(135deg, rgba(255, 20, 147, 0.1), rgba(0, 206, 209, 0.1));
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+.supplement-card h4 {
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+.supplement-card p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.remove-btn {
+    background: transparent;
+    border: 1px solid var(--danger-color);
+    color: var(--danger-color);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.875rem;
+}
+
+.remove-btn:hover {
+    background: var(--danger-color);
+    color: white;
+}
+
+/* Nutrition Summary */
+.nutrition-summary {
+    background: var(--background-card);
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: var(--shadow-card);
+}
+
+.nutrition-summary h3 {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.chart-container {
+    max-width: 500px;
+    margin: 0 auto 2rem;
+}
+
+.nutrient-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.nutrient-item {
+    background: var(--background-light);
+    padding: 1rem;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.nutrient-name {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.nutrient-amount {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.nutrient-unit {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+/* Add Button */
+.add-btn {
+    background: var(--gradient-1);
+    color: white;
+    border: none;
+    padding: 0.5rem 1.5rem;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    animation: gradientShift var(--animation-duration) ease-in-out infinite;
+    background-size: 400% 400%;
+}
+
+.add-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.add-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
