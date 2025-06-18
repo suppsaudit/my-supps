@@ -45,6 +45,23 @@
                 </div>
             </div>
 
+            <!-- Chart Section - 最上位に移動 -->
+            <div class="chart-section" id="chart-section" style="display: none;">
+                <div class="chart-container">
+                    <canvas id="combined-chart" width="500" height="500"></canvas>
+                </div>
+                <div class="chart-legend">
+                    <div class="legend-item current">
+                        <span class="color-indicator"></span>
+                        <span>現在の選択</span>
+                    </div>
+                    <div class="legend-item recommended">
+                        <span class="color-indicator"></span>
+                        <span>推奨摂取量 (100%)</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Search Section -->
             <div class="search-section">
                 <h3>サプリメントを検索</h3>
@@ -64,29 +81,6 @@
             </div>
 
             <div class="audit-content">
-                <!-- Chart Section -->
-                <div class="chart-section">
-                    <div class="chart-container">
-                        <canvas id="combined-chart" width="500" height="500"></canvas>
-                        <div class="chart-placeholder" id="chart-placeholder">
-                            <div class="placeholder-content">
-                                <h4>栄養成分チャート</h4>
-                                <p>サプリメントを選択すると、栄養成分の合計がレーダーチャートで表示されます。</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="chart-legend">
-                        <div class="legend-item current">
-                            <span class="color-indicator"></span>
-                            <span>現在の選択</span>
-                        </div>
-                        <div class="legend-item recommended">
-                            <span class="color-indicator"></span>
-                            <span>推奨摂取量 (100%)</span>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Nutrients Breakdown -->
                 <div class="nutrients-breakdown">
                     <h3>栄養成分詳細</h3>

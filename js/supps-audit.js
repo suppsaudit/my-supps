@@ -791,7 +791,7 @@ function displayCombinedChart(nutrients) {
     console.log('📈 Displaying chart with nutrients:', nutrients);
     
     const canvas = document.getElementById('combined-chart');
-    const placeholder = document.getElementById('chart-placeholder');
+    const chartSection = document.getElementById('chart-section');
     
     if (Object.keys(nutrients).length === 0) {
         console.log('⚠️ No nutrients to display');
@@ -799,9 +799,8 @@ function displayCombinedChart(nutrients) {
         return;
     }
     
-    // Hide placeholder and show chart
-    placeholder.style.display = 'none';
-    canvas.style.display = 'block';
+    // Show chart section
+    chartSection.style.display = 'block';
     
     const ctx = canvas.getContext('2d');
     
@@ -812,6 +811,12 @@ function displayCombinedChart(nutrients) {
     
     const labels = Object.keys(nutrients);
     const data = labels.map(label => nutrients[label].rdaPercent);
+    
+    // レーダーチャートが正しく表示されるように最低3つのデータポイントを確保
+    while (labels.length < 3) {
+        labels.push(`仮想栄養素${labels.length + 1}`);
+        data.push(0);
+    }
     
     combinedChart = new Chart(ctx, {
         type: 'radar',
@@ -929,11 +934,11 @@ function displayNutrientsBreakdown(nutrients) {
 
 // Show chart placeholder
 function showChartPlaceholder() {
-    const canvas = document.getElementById('combined-chart');
-    const placeholder = document.getElementById('chart-placeholder');
+    const chartSection = document.getElementById('chart-section');
     
-    canvas.style.display = 'none';
-    placeholder.style.display = 'flex';
+    if (chartSection) {
+        chartSection.style.display = 'none';
+    }
     
     if (combinedChart) {
         combinedChart.destroy();
