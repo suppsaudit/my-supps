@@ -41,14 +41,20 @@
                     <h2>ログイン</h2>
                     <p class="auth-description">My Suppsで手持ちのサプリを管理しましょう</p>
                     
+                    <div style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 12px; margin-bottom: 20px;">
+                        <p style="margin: 0; font-size: 14px; color: #0369a1;">
+                            🎭 <strong>デモモード:</strong> 任意のメールアドレスとパスワードでログインできます
+                        </p>
+                    </div>
+                    
                     <div class="form-group">
                         <label for="login-email">メールアドレス</label>
-                        <input type="email" id="login-email" required placeholder="your@email.com">
+                        <input type="email" id="login-email" required placeholder="demo@example.com" value="demo@example.com">
                     </div>
                     
                     <div class="form-group">
                         <label for="login-password">パスワード</label>
-                        <input type="password" id="login-password" required placeholder="••••••••">
+                        <input type="password" id="login-password" required placeholder="demo123" value="demo123">
                     </div>
                     
                     <button type="submit" class="btn btn-primary">ログイン</button>
@@ -116,7 +122,8 @@
         </main>
     </div>
 
+    <script src="js/config.js"></script>
     <script src="js/supabase-client.js"></script>
-    <script src="js/auth.js"></script>
+    <script src="js/simple-auth.js"></script>
 </body>
 </html>
