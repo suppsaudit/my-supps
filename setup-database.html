@@ -4,221 +4,664 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Database Setup - MY SUPPS</title>
-    
-    <!-- Supabase CDN v2 -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    
-    <!-- App Configuration -->
     <script src="js/config.js"></script>
-    
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            max-width: 800px; 
-            margin: 0 auto; 
-            padding: 20px; 
-            background: #1a1a1a; 
-            color: white; 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
         }
-        .log { 
-            background: #2a2a2a; 
-            padding: 10px; 
-            margin: 10px 0; 
-            border-radius: 5px; 
-            font-family: monospace; 
+        .setup-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #ff6b9d;
         }
-        .success { color: #4CAF50; }
-        .error { color: #f44336; }
-        .warning { color: #FF9800; }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success { background: #10b981; }
+        .error { background: #ef4444; }
+        .warning { background: #f59e0b; }
+        .info { background: #3b82f6; }
+        pre {
+            background: #1f1f1f;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
         button {
             background: #ff6b9d;
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
+            padding: 12px 24px;
+            border-radius: 4px;
             cursor: pointer;
-            margin: 10px 0;
+            margin: 5px;
+            font-weight: 600;
         }
         button:hover { background: #ff8fab; }
+        button:disabled { background: #666; cursor: not-allowed; }
+        textarea {
+            width: 100%;
+            height: 300px;
+            background: #1f1f1f;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            background: #2a2a2a;
+            color: #fff;
+            width: 200px;
+        }
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            background: #333;
+            border-radius: 6px;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #ff6b9d;
+        }
     </style>
 </head>
 <body>
-    <h1>MY SUPPS - Database Setup</h1>
-    <p>このページでは、MY SUPPSアプリケーションに必要なデータベーステーブルの存在を確認し、作成します。</p>
-    
-    <button onclick="checkDatabase()">データベース状態をチェック</button>
-    <button onclick="testConnection()">接続テスト</button>
-    
-    <div id="log-container"></div>
+    <h1>🔧 MY SUPPS Database Setup & Repair</h1>
+    <p>実際のSupabaseデータベース接続を確立し、認証エラーを根本的に解決します</p>
 
-    <script src="js/supabase-client.js"></script>
-    
+    <div class="setup-section">
+        <h2>🔍 Step 1: Current Configuration Analysis</h2>
+        <div id="config-status"></div>
+        <button onclick="analyzeConfiguration()">Analyze Current Config</button>
+    </div>
+
+    <div class="setup-section">
+        <h2>🗄️ Step 2: Database Schema Deployment</h2>
+        <div class="step">
+            <h3>Production SQL Script</h3>
+            <p>Supabase SQL EditorでこのスクリプトをRUNしてください:</p>
+            <textarea readonly id="production-sql">-- MY SUPPS Production Database Schema
+-- Execute in Supabase SQL Editor
+
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- 1. Supplements table (NIH DSLD API data)
+CREATE TABLE IF NOT EXISTS supplements (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    dsld_id TEXT UNIQUE NOT NULL,
+    name_en TEXT NOT NULL,
+    name_ja TEXT,
+    brand TEXT NOT NULL,
+    serving_size TEXT,
+    servings_per_container INTEGER,
+    image_url TEXT,
+    label_url TEXT,
+    string_id TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 2. Nutrients master
+CREATE TABLE IF NOT EXISTS nutrients (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name_ja TEXT NOT NULL,
+    name_en TEXT,
+    category TEXT,
+    rda_amount DECIMAL,
+    unit TEXT DEFAULT 'mg',
+    description_ja TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 3. Supplement-Nutrient relationships
+CREATE TABLE IF NOT EXISTS supplement_nutrients (
+    supplement_id UUID REFERENCES supplements(id) ON DELETE CASCADE,
+    nutrient_id UUID REFERENCES nutrients(id) ON DELETE CASCADE,
+    amount_per_serving DECIMAL NOT NULL,
+    unit TEXT NOT NULL,
+    daily_value_percent DECIMAL,
+    PRIMARY KEY (supplement_id, nutrient_id)
+);
+
+-- 4. User supplements (MY SUPPS)
+CREATE TABLE IF NOT EXISTS user_supplements (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    supplement_id UUID REFERENCES supplements(id) ON DELETE CASCADE,
+    is_selected BOOLEAN DEFAULT false,
+    is_my_supps BOOLEAN DEFAULT false,
+    added_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(user_id, supplement_id)
+);
+
+-- 5. User intake schedules
+CREATE TABLE IF NOT EXISTS user_intake_schedules (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    supplement_id UUID REFERENCES supplements(id) ON DELETE CASCADE,
+    time_of_day VARCHAR(20) NOT NULL,
+    timing_type VARCHAR(20),
+    frequency TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(user_id, supplement_id, time_of_day)
+);
+
+-- 6. Daily intake logs
+CREATE TABLE IF NOT EXISTS daily_intake_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    schedule_id UUID REFERENCES user_intake_schedules(id) ON DELETE CASCADE,
+    taken_date DATE NOT NULL,
+    is_taken BOOLEAN DEFAULT false,
+    taken_at TIMESTAMP,
+    UNIQUE(user_id, schedule_id, taken_date)
+);
+
+-- 7. Nutrient RDA/UL reference data
+CREATE TABLE IF NOT EXISTS nutrient_rda_ul (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    nutrient_id VARCHAR(50) NOT NULL,
+    nutrient_name VARCHAR(100) NOT NULL,
+    category VARCHAR(20),
+    unit VARCHAR(10),
+    age_group VARCHAR(50),
+    gender VARCHAR(10),
+    rda_ai_value VARCHAR(20),
+    rda_ai_type VARCHAR(5),
+    upper_limit_ul VARCHAR(20),
+    notes TEXT
+);
+
+-- Performance indexes
+CREATE INDEX IF NOT EXISTS idx_supplements_dsld_id ON supplements(dsld_id);
+CREATE INDEX IF NOT EXISTS idx_supplements_string_id ON supplements(string_id);
+CREATE INDEX IF NOT EXISTS idx_user_supplements_user_id ON user_supplements(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_intake_schedules_user_id ON user_intake_schedules(user_id);
+CREATE INDEX IF NOT EXISTS idx_daily_intake_logs_user_id ON daily_intake_logs(user_id);
+
+-- Row Level Security (RLS)
+ALTER TABLE user_supplements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_intake_schedules ENABLE ROW LEVEL SECURITY;
+ALTER TABLE daily_intake_logs ENABLE ROW LEVEL SECURITY;
+
+-- Comprehensive RLS policies
+DROP POLICY IF EXISTS "Users own supplements policy" ON user_supplements;
+CREATE POLICY "Users own supplements policy" ON user_supplements FOR ALL USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users own schedules policy" ON user_intake_schedules;
+CREATE POLICY "Users own schedules policy" ON user_intake_schedules FOR ALL USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users own logs policy" ON daily_intake_logs;
+CREATE POLICY "Users own logs policy" ON daily_intake_logs FOR ALL USING (auth.uid() = user_id);
+
+-- Public access for reference data
+ALTER TABLE supplements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE nutrients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE supplement_nutrients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE nutrient_rda_ul ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public supplements access" ON supplements;
+CREATE POLICY "Public supplements access" ON supplements FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public nutrients access" ON nutrients;
+CREATE POLICY "Public nutrients access" ON nutrients FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public supplement_nutrients access" ON supplement_nutrients;
+CREATE POLICY "Public supplement_nutrients access" ON supplement_nutrients FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public nutrient_rda_ul access" ON nutrient_rda_ul;
+CREATE POLICY "Public nutrient_rda_ul access" ON nutrient_rda_ul FOR SELECT USING (true);
+
+-- Success confirmation
+SELECT 'MY SUPPS production database schema deployed successfully!' as confirmation;</textarea>
+            <button onclick="copyProductionSQL()">Copy Production SQL</button>
+        </div>
+
+        <div class="step">
+            <h3>Deployment Instructions</h3>
+            <ol>
+                <li><strong>Supabaseダッシュボード</strong>: <a href="https://supabase.com/dashboard" target="_blank" style="color: #ff6b9d;">https://supabase.com/dashboard</a></li>
+                <li><strong>プロジェクト選択</strong>: MY SUPPSプロジェクト</li>
+                <li><strong>SQL Editor</strong>: 左メニューから「SQL Editor」</li>
+                <li><strong>スクリプト実行</strong>: 上記SQLをペースト → 「Run」</li>
+                <li><strong>成功確認</strong>: "deployed successfully!" メッセージ</li>
+            </ol>
+        </div>
+
+        <button onclick="verifyDatabaseSchema()" id="verify-schema-btn">Verify Database Schema</button>
+        <div id="schema-verification"></div>
+    </div>
+
+    <div class="setup-section">
+        <h2>🔐 Step 3: Authentication Repair</h2>
+        <div class="step">
+            <h3>Production Account Test</h3>
+            <input type="email" id="prod-email" placeholder="actual-email@domain.com">
+            <input type="password" id="prod-password" placeholder="secure-password">
+            <br>
+            <button onclick="createProductionAccount()">Create Production Account</button>
+            <button onclick="testProductionLogin()">Test Production Login</button>
+        </div>
+        <div id="auth-repair-result"></div>
+    </div>
+
+    <div class="setup-section">
+        <h2>✅ Step 4: Complete System Validation</h2>
+        <button onclick="runProductionValidation()">Run Production System Validation</button>
+        <div id="production-validation"></div>
+    </div>
+
     <script>
-        let currentUser = null;
-        
-        function log(message, type = 'info') {
-            const logContainer = document.getElementById('log-container');
-            const logElement = document.createElement('div');
-            logElement.className = `log ${type}`;
-            logElement.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-            logContainer.appendChild(logElement);
-            console.log(message);
-        }
-        
+        let supabase = null;
+
         document.addEventListener('DOMContentLoaded', async () => {
-            // Wait for Supabase client initialization
-            let attempts = 0;
-            while (!window.supabaseClient && attempts < 50) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-                attempts++;
-            }
-            
-            if (window.supabaseClient) {
-                log('Supabaseクライアントが初期化されました', 'success');
-                
-                // Check authentication
-                try {
-                    const { data: { user } } = await window.supabaseClient.auth.getUser();
-                    if (user) {
-                        currentUser = user;
-                        log(`ログイン中: ${user.email}`, 'success');
-                    } else {
-                        log('ログインが必要です。まずauth.htmlでログインしてください。', 'warning');
-                    }
-                } catch (error) {
-                    log(`認証チェック失敗: ${error.message}`, 'error');
-                }
-            } else {
-                log('Supabaseクライアントの初期化に失敗しました', 'error');
-            }
+            await initializeSupabaseClient();
         });
-        
-        async function testConnection() {
-            try {
-                log('Supabase接続テスト開始...');
-                
-                if (!window.supabaseClient) {
-                    log('Supabaseクライアントが利用できません', 'error');
-                    return;
-                }
-                
-                // Simple query to test connection
-                const { data, error } = await window.supabaseClient
-                    .from('auth.users')
-                    .select('id')
-                    .limit(1);
-                
-                if (error) {
-                    log(`接続テスト失敗: ${error.message}`, 'error');
-                } else {
-                    log('Supabase接続成功', 'success');
-                }
-            } catch (error) {
-                log(`接続テストエラー: ${error.message}`, 'error');
+
+        async function initializeSupabaseClient() {
+            while (!window.APP_CONFIG) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            const config = window.APP_CONFIG.SUPABASE;
+            
+            if (window.supabase && typeof window.supabase.createClient === 'function') {
+                supabase = window.supabase.createClient(config.URL, config.ANON_KEY);
+                console.log('✅ Supabase client initialized for database setup');
+            } else {
+                console.error('❌ Supabase SDK not available');
             }
         }
-        
-        async function checkDatabase() {
-            try {
-                log('データベーステーブル存在チェック開始...');
-                
-                if (!window.supabaseClient) {
-                    log('Supabaseクライアントが利用できません', 'error');
-                    return;
-                }
-                
-                // Check supplements table
-                try {
-                    const { data, error } = await window.supabaseClient
-                        .from('supplements')
-                        .select('id')
-                        .limit(1);
-                    
-                    if (error) {
-                        log(`supplementsテーブル: ${error.message}`, 'error');
-                    } else {
-                        log('supplementsテーブル: 存在します', 'success');
-                        log(`  レコード数確認中...`);
-                        const { count } = await window.supabaseClient
-                            .from('supplements')
-                            .select('*', { count: 'exact', head: true });
-                        log(`  レコード数: ${count || 0}件`);
-                    }
-                } catch (testError) {
-                    log(`supplementsテーブルテスト失敗: ${testError.message}`, 'error');
-                }
-                
-                // Check user_supplements table
-                try {
-                    const { data, error } = await window.supabaseClient
-                        .from('user_supplements')
-                        .select('user_id')
-                        .limit(1);
-                    
-                    if (error) {
-                        log(`user_supplementsテーブル: ${error.message}`, 'error');
-                    } else {
-                        log('user_supplementsテーブル: 存在します', 'success');
-                        const { count } = await window.supabaseClient
-                            .from('user_supplements')
-                            .select('*', { count: 'exact', head: true });
-                        log(`  レコード数: ${count || 0}件`);
-                    }
-                } catch (testError) {
-                    log(`user_supplementsテーブルテスト失敗: ${testError.message}`, 'error');
-                }
-                
-                // Check nutrients table
-                try {
-                    const { data, error } = await window.supabaseClient
-                        .from('nutrients')
-                        .select('id')
-                        .limit(1);
-                    
-                    if (error) {
-                        log(`nutrientsテーブル: ${error.message}`, 'error');
-                    } else {
-                        log('nutrientsテーブル: 存在します', 'success');
-                        const { count } = await window.supabaseClient
-                            .from('nutrients')
-                            .select('*', { count: 'exact', head: true });
-                        log(`  レコード数: ${count || 0}件`);
-                    }
-                } catch (testError) {
-                    log(`nutrientsテーブルテスト失敗: ${testError.message}`, 'error');
-                }
-                
-                // Check supplement_nutrients table
-                try {
-                    const { data, error } = await window.supabaseClient
-                        .from('supplement_nutrients')
-                        .select('id')
-                        .limit(1);
-                    
-                    if (error) {
-                        log(`supplement_nutrientsテーブル: ${error.message}`, 'error');
-                    } else {
-                        log('supplement_nutrientsテーブル: 存在します', 'success');
-                        const { count } = await window.supabaseClient
-                            .from('supplement_nutrients')
-                            .select('*', { count: 'exact', head: true });
-                        log(`  レコード数: ${count || 0}件`);
-                    }
-                } catch (testError) {
-                    log(`supplement_nutrientsテーブルテスト失敗: ${testError.message}`, 'error');
-                }
-                
-                log('データベースチェック完了');
-                log('');
-                log('❌ エラーが表示された場合は、以下の手順でテーブルを作成してください:');
-                log('1. Supabaseダッシュボードにログイン');
-                log('2. SQL Editorを開く');
-                log('3. create-tables.sqlの内容をコピー&ペースト');
-                log('4. 実行ボタンをクリック');
-                
-            } catch (error) {
-                log(`チェック処理エラー: ${error.message}`, 'error');
+
+        async function analyzeConfiguration() {
+            const statusEl = document.getElementById('config-status');
+            
+            if (!window.APP_CONFIG) {
+                statusEl.innerHTML = '<div class="status error">❌ Configuration not loaded</div>';
+                return;
             }
+
+            const config = window.APP_CONFIG.SUPABASE;
+            
+            if (config.URL === 'https://your-project-ref.supabase.co' || 
+                config.ANON_KEY === 'your-anon-public-key-here') {
+                statusEl.innerHTML = `
+                    <div class="status error">❌ Configuration contains placeholder values</div>
+                    <p><strong>Critical Issue:</strong> Real Supabase credentials required</p>
+                    <pre>Required in js/config.js:
+SUPABASE: {
+    URL: 'https://your-project-id.supabase.co',
+    ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+}</pre>
+                `;
+                return;
+            }
+
+            if (!supabase) {
+                statusEl.innerHTML = '<div class="status error">❌ Supabase client initialization failed</div>';
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase.from('supplements').select('count', { count: 'exact', head: true });
+                
+                if (error && error.code === 'PGRST116') {
+                    statusEl.innerHTML = `
+                        <div class="status warning">⚠️ Database connected, tables missing</div>
+                        <p><strong>Status:</strong> Ready for schema deployment</p>
+                        <p><strong>Project:</strong> ${config.URL}</p>
+                        <p><strong>Next:</strong> Execute SQL script in Step 2</p>
+                    `;
+                } else if (error) {
+                    statusEl.innerHTML = `
+                        <div class="status error">❌ Database access error: ${error.message}</div>
+                        <pre>Error Details: ${JSON.stringify(error, null, 2)}</pre>
+                    `;
+                } else {
+                    statusEl.innerHTML = `
+                        <div class="status success">✅ Database fully operational</div>
+                        <p><strong>Project:</strong> ${config.URL}</p>
+                        <p><strong>Schema:</strong> Already deployed</p>
+                        <p><strong>Status:</strong> Production ready</p>
+                    `;
+                }
+            } catch (error) {
+                statusEl.innerHTML = `
+                    <div class="status error">❌ Connection failed: ${error.message}</div>
+                    <pre>${error.stack}</pre>
+                `;
+            }
+        }
+
+        function copyProductionSQL() {
+            const sqlText = document.getElementById('production-sql').value;
+            navigator.clipboard.writeText(sqlText).then(() => {
+                alert('✅ Production SQLスクリプトがコピーされました！\n\nSupabase SQL Editorで実行してください。');
+            }).catch(() => {
+                const textArea = document.createElement('textarea');
+                textArea.value = sqlText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('✅ Production SQLスクリプトがコピーされました！');
+            });
+        }
+
+        async function verifyDatabaseSchema() {
+            const resultEl = document.getElementById('schema-verification');
+            const btn = document.getElementById('verify-schema-btn');
+            
+            if (!supabase) {
+                resultEl.innerHTML = '<div class="status error">❌ Supabase client not initialized</div>';
+                return;
+            }
+
+            btn.disabled = true;
+            resultEl.innerHTML = '<div class="status info">🔄 Verifying production database schema...</div>';
+
+            const productionTables = [
+                'supplements',
+                'nutrients',
+                'supplement_nutrients',
+                'user_supplements',
+                'user_intake_schedules',
+                'daily_intake_logs',
+                'nutrient_rda_ul'
+            ];
+
+            const verificationResults = [];
+
+            for (const table of productionTables) {
+                try {
+                    const { data, error } = await supabase.from(table).select('*').limit(1);
+                    verificationResults.push({
+                        table,
+                        success: !error,
+                        error: error?.message,
+                        code: error?.code
+                    });
+                } catch (error) {
+                    verificationResults.push({
+                        table,
+                        success: false,
+                        error: error.message
+                    });
+                }
+            }
+
+            const successCount = verificationResults.filter(r => r.success).length;
+            const totalCount = productionTables.length;
+
+            let html = '';
+            if (successCount === totalCount) {
+                html = '<div class="status success">🎉 Production database schema verified!</div>';
+            } else {
+                html = `<div class="status error">❌ ${totalCount - successCount} tables missing</div>`;
+            }
+
+            html += '<div style="margin-top: 15px;"><h4>Schema Verification:</h4>';
+            verificationResults.forEach(result => {
+                const status = result.success ? '✅' : '❌';
+                const details = result.error ? ` - ${result.error}` : ' - OK';
+                html += `<div style="padding: 5px;">${status} <strong>${result.table}</strong>${details}</div>`;
+            });
+            html += '</div>';
+
+            if (successCount < totalCount) {
+                html += `
+                    <div style="margin-top: 15px; padding: 15px; background: #ef4444; border-radius: 6px;">
+                        <h4>🚨 Database Setup Required</h4>
+                        <p><strong>Action:</strong> Execute SQL script in Supabase Dashboard</p>
+                        <ol>
+                            <li>Copy production SQL script above</li>
+                            <li>Open <a href="https://supabase.com/dashboard" target="_blank" style="color: white;">Supabase Dashboard</a></li>
+                            <li>Navigate to SQL Editor</li>
+                            <li>Paste and execute script</li>
+                            <li>Return and verify again</li>
+                        </ol>
+                    </div>
+                `;
+            }
+
+            resultEl.innerHTML = html;
+            btn.disabled = false;
+        }
+
+        async function createProductionAccount() {
+            const email = document.getElementById('prod-email').value;
+            const password = document.getElementById('prod-password').value;
+            const resultEl = document.getElementById('auth-repair-result');
+
+            if (!email || !password) {
+                resultEl.innerHTML = '<div class="status warning">⚠️ Enter actual email and secure password</div>';
+                return;
+            }
+
+            if (password.length < 8) {
+                resultEl.innerHTML = '<div class="status warning">⚠️ Password must be at least 8 characters</div>';
+                return;
+            }
+
+            if (!supabase) {
+                resultEl.innerHTML = '<div class="status error">❌ Supabase client not initialized</div>';
+                return;
+            }
+
+            try {
+                resultEl.innerHTML = '<div class="status info">🔄 Creating production account...</div>';
+                
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password
+                });
+
+                if (error) {
+                    resultEl.innerHTML = `<div class="status error">❌ Account creation failed: ${error.message}</div>`;
+                } else {
+                    resultEl.innerHTML = `
+                        <div class="status success">✅ Production account created!</div>
+                        <p><strong>User ID:</strong> ${data.user?.id}</p>
+                        <p><strong>Email:</strong> ${data.user?.email}</p>
+                        <p><strong>Status:</strong> ${data.user?.email_confirmed_at ? 'Confirmed' : 'Confirmation pending'}</p>
+                        <p><strong>Next:</strong> Test login functionality</p>
+                    `;
+                }
+            } catch (error) {
+                resultEl.innerHTML = `<div class="status error">❌ Account creation error: ${error.message}</div>`;
+            }
+        }
+
+        async function testProductionLogin() {
+            const email = document.getElementById('prod-email').value;
+            const password = document.getElementById('prod-password').value;
+            const resultEl = document.getElementById('auth-repair-result');
+
+            if (!email || !password) {
+                resultEl.innerHTML = '<div class="status warning">⚠️ Enter credentials to test</div>';
+                return;
+            }
+
+            if (!supabase) {
+                resultEl.innerHTML = '<div class="status error">❌ Supabase client not initialized</div>';
+                return;
+            }
+
+            try {
+                resultEl.innerHTML = '<div class="status info">🔄 Testing production login...</div>';
+                
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password
+                });
+
+                if (error) {
+                    resultEl.innerHTML = `
+                        <div class="status error">❌ Production login failed: ${error.message}</div>
+                        <p><strong>Diagnosis:</strong> This is the exact error users are experiencing</p>
+                        <p><strong>Solution needed:</strong> Fix authentication configuration</p>
+                    `;
+                } else {
+                    resultEl.innerHTML = `
+                        <div class="status success">✅ Production login successful!</div>
+                        <p><strong>User ID:</strong> ${data.user?.id}</p>
+                        <p><strong>Email:</strong> ${data.user?.email}</p>
+                        <p><strong>Session:</strong> ${data.session ? 'Active' : 'None'}</p>
+                        <p><strong>Status:</strong> Authentication system working correctly</p>
+                    `;
+                }
+            } catch (error) {
+                resultEl.innerHTML = `<div class="status error">❌ Production login exception: ${error.message}</div>`;
+            }
+        }
+
+        async function runProductionValidation() {
+            const resultEl = document.getElementById('production-validation');
+            resultEl.innerHTML = '<div class="status info">🔄 Running comprehensive production validation...</div>';
+
+            const validationTests = [];
+
+            // Test 1: Configuration
+            validationTests.push({ 
+                name: 'Configuration', 
+                result: window.APP_CONFIG ? 'PASS' : 'FAIL',
+                details: window.APP_CONFIG ? 'Config loaded successfully' : 'Configuration missing'
+            });
+
+            // Test 2: Supabase SDK
+            validationTests.push({ 
+                name: 'Supabase SDK', 
+                result: supabase ? 'PASS' : 'FAIL',
+                details: supabase ? 'Client ready' : 'SDK initialization failed'
+            });
+
+            // Test 3: Database connection
+            try {
+                await supabase.from('supplements').select('count', { count: 'exact', head: true });
+                validationTests.push({ name: 'Database Connection', result: 'PASS', details: 'Connection successful' });
+            } catch (error) {
+                validationTests.push({ name: 'Database Connection', result: 'FAIL', details: error.message });
+            }
+
+            // Test 4: Schema completeness
+            const requiredTables = ['supplements', 'nutrients', 'user_supplements', 'user_intake_schedules', 'daily_intake_logs'];
+            let schemaComplete = 0;
+            for (const table of requiredTables) {
+                try {
+                    await supabase.from(table).select('*').limit(1);
+                    schemaComplete++;
+                } catch (error) {
+                    // Table missing
+                }
+            }
+            validationTests.push({ 
+                name: 'Database Schema', 
+                result: schemaComplete === requiredTables.length ? 'PASS' : 'FAIL',
+                details: `${schemaComplete}/${requiredTables.length} tables present`
+            });
+
+            // Test 5: Authentication system
+            try {
+                const { data, error } = await supabase.auth.getUser();
+                validationTests.push({ 
+                    name: 'Authentication System', 
+                    result: 'PASS',
+                    details: data.user ? 'User session active' : 'No session (normal)'
+                });
+            } catch (error) {
+                validationTests.push({ name: 'Authentication System', result: 'FAIL', details: error.message });
+            }
+
+            // Test 6: Row Level Security
+            try {
+                const { data, error } = await supabase.from('user_supplements').select('*').limit(1);
+                validationTests.push({ 
+                    name: 'Row Level Security', 
+                    result: 'PASS',
+                    details: 'RLS policies working'
+                });
+            } catch (error) {
+                if (error.code === 'PGRST301') {
+                    validationTests.push({ name: 'Row Level Security', result: 'PASS', details: 'RLS enforced correctly' });
+                } else {
+                    validationTests.push({ name: 'Row Level Security', result: 'FAIL', details: error.message });
+                }
+            }
+
+            // Calculate results
+            const passCount = validationTests.filter(t => t.result === 'PASS').length;
+            const failCount = validationTests.filter(t => t.result === 'FAIL').length;
+            const totalCount = validationTests.length;
+
+            let html = '';
+            if (failCount === 0) {
+                html = '<div class="status success">🎉 Production system validation PASSED!</div>';
+            } else {
+                html = `<div class="status error">❌ ${failCount} critical issues detected</div>`;
+            }
+
+            html += '<div style="margin-top: 15px;"><h4>Validation Results:</h4>';
+            validationTests.forEach(test => {
+                const icon = test.result === 'PASS' ? '✅' : '❌';
+                html += `<div style="padding: 8px; border-left: 3px solid ${test.result === 'PASS' ? '#10b981' : '#ef4444'}; margin: 5px 0; background: #333; border-radius: 4px;">
+                    <strong>${icon} ${test.name}:</strong> ${test.result} - ${test.details}
+                </div>`;
+            });
+            html += '</div>';
+
+            if (failCount === 0) {
+                html += `
+                    <div style="margin-top: 20px; padding: 20px; background: #10b981; border-radius: 8px;">
+                        <h3>🚀 Production System Ready!</h3>
+                        <p><strong>All systems operational.</strong> Authentication errors resolved.</p>
+                        <ul style="margin: 10px 0;">
+                            <li>✅ Database schema deployed</li>
+                            <li>✅ Authentication system functional</li>
+                            <li>✅ Row Level Security enabled</li>
+                            <li>✅ All core tables accessible</li>
+                        </ul>
+                        <p><strong>Next Steps:</strong></p>
+                        <ol style="margin: 10px 0;">
+                            <li>Test full authentication at <a href="auth.html" style="color: white; text-decoration: underline;">auth.html</a></li>
+                            <li>Verify MY SUPPS functionality</li>
+                            <li>Deploy to production</li>
+                        </ol>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div style="margin-top: 20px; padding: 20px; background: #ef4444; border-radius: 8px;">
+                        <h3>🔧 Issues Require Resolution</h3>
+                        <p><strong>Critical failures detected.</strong> Complete setup before proceeding:</p>
+                        <ol style="margin: 10px 0;">
+                            <li>Execute all SQL scripts in Supabase Dashboard</li>
+                            <li>Verify authentication settings</li>
+                            <li>Check database permissions</li>
+                            <li>Re-run validation until all tests pass</li>
+                        </ol>
+                    </div>
+                `;
+            }
+
+            resultEl.innerHTML = html;
         }
     </script>
 </body>

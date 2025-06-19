@@ -106,9 +106,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('🎭 Running in Demo Mode');
                 window.isDemo = true;
                 
+                console.error('🚨 CRITICAL: Supabase configuration contains placeholders');
+                console.error('🚨 Real database credentials required - demo mode disabled');
+                
                 if (window.APP_CONFIG.DEBUG.SHOW_DEMO_NOTIFICATION) {
                     setTimeout(() => {
-                        showDemoNotification();
+                        showConfigurationError();
                     }, 1000);
                 }
             }
@@ -119,7 +122,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// デモモード通知表示
+// 設定エラー通知表示
+function showConfigurationError() {
+    if (document.body) {
+        const notification = document.createElement('div');
+        notification.innerHTML = `
+            <div style="position: fixed; top: 10px; right: 10px; background: #ef4444; color: white; padding: 12px 20px; border-radius: 8px; z-index: 9999; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 400px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span>🚨</span>
+                    <div>
+                        <div style="font-size: 14px;">設定エラー</div>
+                        <div style="font-size: 12px; opacity: 0.9;">実際のSupabase認証情報が必要です</div>
+                        <div style="font-size: 11px; margin-top: 4px;">
+                            <a href="setup-database.html" style="color: white; text-decoration: underline;">設定ガイド</a>を確認してください
+                        </div>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; margin-left: auto;">×</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(notification);
+    }
+}
+
+// デモモード通知表示（削除予定）
 function showDemoNotification() {
     if (document.body) {
         const notification = document.createElement('div');

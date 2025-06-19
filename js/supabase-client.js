@@ -1,12 +1,9 @@
-// Supabase configuration
-// 設定は config.js で管理されています
+// Production Supabase client initialization
+// NEVER use demo mode - always connect to real database
 
-// Initialize Supabase client with error handling
 let supabase = null;
-let isDemo = false;
 let initializationPromise = null;
 
-// 設定が読み込まれるまで待機
 function waitForConfig() {
     return new Promise((resolve) => {
         if (window.APP_CONFIG) {
@@ -25,7 +22,6 @@ function waitForConfig() {
 }
 
 async function initializeSupabase() {
-    // 既に初期化中または完了している場合はスキップ
     if (initializationPromise) {
         return initializationPromise;
     }
@@ -35,44 +31,42 @@ async function initializeSupabase() {
         
         const config = window.APP_CONFIG.SUPABASE;
         
+        // Validate configuration
+        if (config.URL === 'https://your-project-ref.supabase.co' || 
+            config.ANON_KEY === 'your-anon-public-key-here') {
+            console.error('❌ CRITICAL: Supabase configuration contains placeholder values');
+            console.error('❌ Real Supabase credentials required in js/config.js');
+            throw new Error('Production Supabase configuration required');
+        }
+
+        if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+            console.error('❌ CRITICAL: Supabase SDK not available');
+            throw new Error('Supabase SDK not loaded');
+        }
+
         try {
-        // 実際のSupabase設定があるかチェック
-        if (window.supabase && 
-            config.URL !== 'https://your-project-ref.supabase.co' && 
-            config.ANON_KEY !== 'your-anon-public-key-here') {
-            
-            // グローバルに一つのクライアントのみ作成
+            // Create single global Supabase client
             if (!window.supabaseClient) {
                 window.supabaseClient = window.supabase.createClient(config.URL, config.ANON_KEY);
+                console.log('✅ Production Supabase client initialized');
+                console.log('🚀 Connected to:', config.URL);
             }
+            
             supabase = window.supabaseClient;
             window.isDemo = false;
-            isDemo = false;
-            console.log('✅ Supabase client initialized successfully');
-            console.log('🚀 Production Mode - Connected to:', config.URL);
-        } else {
-            console.warn('⚠️ Supabase configuration is missing or placeholder. Running in demo mode.');
             
-            // Load mock auth system for demo mode
-            const script = document.createElement('script');
-            script.src = 'js/mock-auth.js';
-            script.onload = () => {
-                supabase = new window.MockSupabaseClient();
-                window.isDemo = true;
-                isDemo = true;
-                console.log('🎭 Demo mode activated with mock authentication');
-                
-                // Update auth UI after initialization
-                updateAuthUI();
-            };
-            document.head.appendChild(script);
+            // Test connection
+            const { data, error } = await supabase.from('supplements').select('count', { count: 'exact', head: true });
+            if (error && error.code !== 'PGRST116') {
+                console.warn('⚠️ Database connection issue:', error.message);
+            } else {
+                console.log('✅ Database connection verified');
+            }
+            
+        } catch (error) {
+            console.error('❌ CRITICAL: Supabase initialization failed:', error);
+            throw error;
         }
-    } catch (error) {
-        console.error('❌ Failed to initialize Supabase client:', error);
-        console.log('🎭 Falling back to demo mode');
-        window.isDemo = true;
-        isDemo = true;
-    }
     })();
     
     return initializationPromise;

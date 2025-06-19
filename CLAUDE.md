@@ -2,6 +2,15 @@
 
 ## 🚨 最重要作業原則（CRITICAL WORK PRINCIPLES）
 
+### **🚫 絶対禁止: デモモード・モックデータの使用**
+**NEVER USE DEMO MODE OR MOCK DATA - ALWAYS USE REAL DATABASE CONNECTIONS**
+
+**Critical Rule: NO DEMO MODE IMPLEMENTATIONS**
+- デモモード・モックデータ・localStorage代替の実装は完全に禁止
+- 認証エラーが発生した場合は実際のSupabaseデータベース接続を修復する
+- 「簡易実装」「一時的な回避策」「デモ用」は一切認められない
+- 全ての機能は実際のデータベースとAPIとの接続で動作しなければならない
+
 ### **絶対必須: 推測禁止・一次情報確認原則**
 **ALL WORK MUST START WITH PRIMARY SOURCE VERIFICATION - NO ASSUMPTIONS ALLOWED**
 

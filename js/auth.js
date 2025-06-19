@@ -1,22 +1,21 @@
-// Wait for Supabase client to be initialized
+// Production authentication - no demo mode allowed
 let supabaseReady = false;
 
-// Initialize Supabase client - 共通のクライアントを使用
 async function initializeAuth() {
-    // Wait for the main supabase client to be initialized
+    // Wait for production Supabase client to be initialized
     let attempts = 0;
-    while ((!window.supabaseClient && !window.isDemo) && attempts < 50) {
+    while (!window.supabaseClient && attempts < 50) {
         await new Promise(resolve => setTimeout(resolve, 100));
         attempts++;
     }
     
-    if (window.supabaseClient || window.isDemo) {
-        // 既存の共通クライアントを使用
-        window.supabase = window.supabaseClient || window.supabase;
+    if (window.supabaseClient) {
+        window.supabase = window.supabaseClient;
         supabaseReady = true;
-        console.log('✅ Using shared Supabase client for auth');
+        console.log('✅ Production Supabase authentication ready');
     } else {
-        console.error('❌ Supabase client not available');
+        console.error('❌ CRITICAL: Production Supabase client not available');
+        throw new Error('Production database connection required');
     }
 }
 

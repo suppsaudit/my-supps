@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Database Debug - MY SUPPS</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .debug-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #ff6b9d;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success { background: #10b981; }
+        .error { background: #ef4444; }
+        .warning { background: #f59e0b; }
+        .info { background: #3b82f6; }
+        pre {
+            background: #1f1f1f;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        button {
+            background: #ff6b9d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #ff8fab;
+        }
+        .table-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        .table-card {
+            background: #333;
+            padding: 15px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Supabase Database Debug Tool</h1>
+    <p>実際のSupabaseデータベース接続状況と設定を確認します</p>
+
+    <div class="debug-section">
+        <h2>📋 Configuration Status</h2>
+        <div id="config-status"></div>
+        <pre id="config-details"></pre>
+    </div>
+
+    <div class="debug-section">
+        <h2>🔗 Database Connection</h2>
+        <button onclick="testConnection()">Test Connection</button>
+        <div id="connection-status"></div>
+        <pre id="connection-details"></pre>
+    </div>
+
+    <div class="debug-section">
+        <h2>🗄️ Table Structure</h2>
+        <button onclick="checkTables()">Check Tables</button>
+        <div id="table-status"></div>
+        <div id="table-details" class="table-info"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>🔐 Authentication Test</h2>
+        <div>
+            <input type="email" id="test-email" placeholder="テスト用メールアドレス" style="padding: 8px; margin: 5px; border-radius: 4px; border: 1px solid #555; background: #2a2a2a; color: #fff;">
+            <input type="password" id="test-password" placeholder="テスト用パスワード" style="padding: 8px; margin: 5px; border-radius: 4px; border: 1px solid #555; background: #2a2a2a; color: #fff;">
+        </div>
+        <button onclick="testSignup()">Test Signup</button>
+        <button onclick="testLogin()">Test Login</button>
+        <button onclick="testGetUser()">Test Get User</button>
+        <div id="auth-status"></div>
+        <pre id="auth-details"></pre>
+    </div>
+
+    <div class="debug-section">
+        <h2>📊 Database Operations</h2>
+        <button onclick="testTableOperations()">Test CRUD Operations</button>
+        <div id="crud-status"></div>
+        <pre id="crud-details"></pre>
+    </div>
+
+    <script>
+        let supabase = null;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initializeDebug();
+        });
+
+        async function initializeDebug() {
+            console.log('🔄 Initializing debug tool...');
+            
+            // Wait for config
+            while (!window.APP_CONFIG) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            const configStatus = document.getElementById('config-status');
+            const configDetails = document.getElementById('config-details');
+
+            try {
+                const config = window.APP_CONFIG.SUPABASE;
+                
+                // Display configuration
+                configDetails.textContent = JSON.stringify({
+                    URL: config.URL,
+                    ANON_KEY: config.ANON_KEY.substring(0, 20) + '...',
+                    FEATURES: window.APP_CONFIG.FEATURES,
+                    DEBUG: window.APP_CONFIG.DEBUG
+                }, null, 2);
+
+                // Check if configuration is valid
+                if (config.URL === 'https://your-project-ref.supabase.co' || 
+                    config.ANON_KEY === 'your-anon-public-key-here') {
+                    configStatus.innerHTML = '<div class="status error">❌ Configuration contains placeholder values</div>';
+                    return;
+                }
+
+                // Initialize Supabase client
+                if (window.supabase && typeof window.supabase.createClient === 'function') {
+                    supabase = window.supabase.createClient(config.URL, config.ANON_KEY);
+                    configStatus.innerHTML = '<div class="status success">✅ Configuration loaded successfully</div>';
+                } else {
+                    configStatus.innerHTML = '<div class="status error">❌ Supabase SDK not available</div>';
+                }
+
+            } catch (error) {
+                configStatus.innerHTML = `<div class="status error">❌ Configuration error: ${error.message}</div>`;
+                configDetails.textContent = error.stack;
+            }
+        }
+
+        async function testConnection() {
+            const statusEl = document.getElementById('connection-status');
+            const detailsEl = document.getElementById('connection-details');
+
+            if (!supabase) {
+                statusEl.innerHTML = '<div class="status error">❌ Supabase client not initialized</div>';
+                return;
+            }
+
+            try {
+                statusEl.innerHTML = '<div class="status info">🔄 Testing connection...</div>';
+                
+                // Test basic connection with a simple query
+                const { data, error } = await supabase.from('supplements').select('count', { count: 'exact', head: true });
+                
+                if (error) {
+                    statusEl.innerHTML = `<div class="status error">❌ Connection failed: ${error.message}</div>`;
+                    detailsEl.textContent = JSON.stringify(error, null, 2);
+                } else {
+                    statusEl.innerHTML = '<div class="status success">✅ Connection successful</div>';
+                    detailsEl.textContent = JSON.stringify({ 
+                        message: 'Successfully connected to database',
+                        count: data?.[0]?.count || 'Unable to get count',
+                        timestamp: new Date().toISOString()
+                    }, null, 2);
+                }
+            } catch (error) {
+                statusEl.innerHTML = `<div class="status error">❌ Connection test failed: ${error.message}</div>`;
+                detailsEl.textContent = error.stack;
+            }
+        }
+
+        async function checkTables() {
+            const statusEl = document.getElementById('table-status');
+            const detailsEl = document.getElementById('table-details');
+
+            if (!supabase) {
+                statusEl.innerHTML = '<div class="status error">❌ Supabase client not initialized</div>';
+                return;
+            }
+
+            const tables = [
+                'supplements',
+                'nutrients', 
+                'supplement_nutrients',
+                'user_supplements',
+                'user_intake_schedules',
+                'daily_intake_logs',
+                'nutrient_rda_ul'
+            ];
+
+            statusEl.innerHTML = '<div class="status info">🔄 Checking table structure...</div>';
+            detailsEl.innerHTML = '';
+
+            let allTablesExist = true;
+
+            for (const table of tables) {
+                try {
+                    const { data, error } = await supabase.from(table).select('*').limit(1);
+                    
+                    const card = document.createElement('div');
+                    card.className = 'table-card';
+                    
+                    if (error) {
+                        allTablesExist = false;
+                        card.innerHTML = `
+                            <h4>❌ ${table}</h4>
+                            <p>Error: ${error.message}</p>
+                            <p>Code: ${error.code}</p>
+                        `;
+                    } else {
+                        card.innerHTML = `
+                            <h4>✅ ${table}</h4>
+                            <p>Status: OK</p>
+                            <p>Sample data available: ${data && data.length > 0 ? 'Yes' : 'No'}</p>
+                        `;
+                    }
+                    
+                    detailsEl.appendChild(card);
+                } catch (error) {
+                    allTablesExist = false;
+                    const card = document.createElement('div');
+                    card.className = 'table-card';
+                    card.innerHTML = `
+                        <h4>❌ ${table}</h4>
+                        <p>Exception: ${error.message}</p>
+                    `;
+                    detailsEl.appendChild(card);
+                }
+            }
+
+            if (allTablesExist) {
+                statusEl.innerHTML = '<div class="status success">✅ All tables accessible</div>';
+            } else {
+                statusEl.innerHTML = '<div class="status warning">⚠️ Some tables have issues - see details below</div>';
+            }
+        }
+
+        async function testSignup() {
+            const email = document.getElementById('test-email').value;
+            const password = document.getElementById('test-password').value;
+            const statusEl = document.getElementById('auth-status');
+            const detailsEl = document.getElementById('auth-details');
+
+            if (!email || !password) {
+                statusEl.innerHTML = '<div class="status warning">⚠️ Please enter email and password</div>';
+                return;
+            }
+
+            if (!supabase) {
+                statusEl.innerHTML = '<div class="status error">❌ Supabase client not initialized</div>';
+                return;
+            }
+
+            try {
+                statusEl.innerHTML = '<div class="status info">🔄 Testing signup...</div>';
+                
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password
+                });
+
+                if (error) {
+                    statusEl.innerHTML = `<div class="status error">❌ Signup failed: ${error.message}</div>`;
+                } else {
+                    statusEl.innerHTML = '<div class="status success">✅ Signup successful</div>';
+                }
+                
+                detailsEl.textContent = JSON.stringify({ data, error }, null, 2);
+            } catch (error) {
+                statusEl.innerHTML = `<div class="status error">❌ Signup exception: ${error.message}</div>`;
+                detailsEl.textContent = error.stack;
+            }
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('test-email').value;
+            const password = document.getElementById('test-password').value;
+            const statusEl = document.getElementById('auth-status');
+            const detailsEl = document.getElementById('auth-details');
+
+            if (!email || !password) {
+                statusEl.innerHTML = '<div class="status warning">⚠️ Please enter email and password</div>';
+                return;
+            }
+
+            if (!supabase) {
+                statusEl.innerHTML = '<div class="status error">❌ Supabase client not initialized</div>';
+                return;
+            }
+
+            try {
+                statusEl.innerHTML = '<div class="status info">🔄 Testing login...</div>';
+                
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password
+                });
+
+                if (error) {
+                    statusEl.innerHTML = `<div class="status error">❌ Login failed: ${error.message}</div>`;
+                } else {
+                    statusEl.innerHTML = '<div class="status success">✅ Login successful</div>';
+                }
+                
+                detailsEl.textContent = JSON.stringify({ data, error }, null, 2);
+            } catch (error) {
+                statusEl.innerHTML = `<div class="status error">❌ Login exception: ${error.message}</div>`;
+                detailsEl.textContent = error.stack;
+            }
+        }
+
+        async function testGetUser() {
+            const statusEl = document.getElementById('auth-status');
+            const detailsEl = document.getElementById('auth-details');
+
+            if (!supabase) {
+                statusEl.innerHTML = '<div class="status error">❌ Supabase client not initialized</div>';
+                return;
+            }
+
+            try {
+                statusEl.innerHTML = '<div class="status info">🔄 Getting current user...</div>';
+                
+                const { data, error } = await supabase.auth.getUser();
+
+                if (error) {
+                    statusEl.innerHTML = `<div class="status error">❌ Get user failed: ${error.message}</div>`;
+                } else if (data.user) {
+                    statusEl.innerHTML = '<div class="status success">✅ User found</div>';
+                } else {
+                    statusEl.innerHTML = '<div class="status info">ℹ️ No user currently logged in</div>';
+                }
+                
+                detailsEl.textContent = JSON.stringify({ data, error }, null, 2);
+            } catch (error) {
+                statusEl.innerHTML = `<div class="status error">❌ Get user exception: ${error.message}</div>`;
+                detailsEl.textContent = error.stack;
+            }
+        }
+
+        async function testTableOperations() {
+            const statusEl = document.getElementById('crud-status');
+            const detailsEl = document.getElementById('crud-details');
+
+            if (!supabase) {
+                statusEl.innerHTML = '<div class="status error">❌ Supabase client not initialized</div>';
+                return;
+            }
+
+            const results = [];
+            statusEl.innerHTML = '<div class="status info">🔄 Testing CRUD operations...</div>';
+
+            // Test 1: Read supplements
+            try {
+                const { data: supplements, error: suppError } = await supabase
+                    .from('supplements')
+                    .select('*')
+                    .limit(5);
+                
+                results.push({
+                    operation: 'Read supplements',
+                    success: !suppError,
+                    error: suppError?.message,
+                    dataCount: supplements?.length || 0
+                });
+            } catch (error) {
+                results.push({
+                    operation: 'Read supplements',
+                    success: false,
+                    error: error.message
+                });
+            }
+
+            // Test 2: Read nutrients
+            try {
+                const { data: nutrients, error: nutError } = await supabase
+                    .from('nutrients')
+                    .select('*')
+                    .limit(5);
+                
+                results.push({
+                    operation: 'Read nutrients',
+                    success: !nutError,
+                    error: nutError?.message,
+                    dataCount: nutrients?.length || 0
+                });
+            } catch (error) {
+                results.push({
+                    operation: 'Read nutrients',
+                    success: false,
+                    error: error.message
+                });
+            }
+
+            // Test 3: Try to read user_supplements (requires auth)
+            try {
+                const { data: userSupps, error: userError } = await supabase
+                    .from('user_supplements')
+                    .select('*')
+                    .limit(5);
+                
+                results.push({
+                    operation: 'Read user_supplements',
+                    success: !userError,
+                    error: userError?.message,
+                    dataCount: userSupps?.length || 0
+                });
+            } catch (error) {
+                results.push({
+                    operation: 'Read user_supplements',
+                    success: false,
+                    error: error.message
+                });
+            }
+
+            const successCount = results.filter(r => r.success).length;
+            const totalCount = results.length;
+
+            if (successCount === totalCount) {
+                statusEl.innerHTML = '<div class="status success">✅ All CRUD operations successful</div>';
+            } else {
+                statusEl.innerHTML = `<div class="status warning">⚠️ ${successCount}/${totalCount} operations successful</div>`;
+            }
+
+            detailsEl.textContent = JSON.stringify(results, null, 2);
+        }
+    </script>
+</body>
+</html>
