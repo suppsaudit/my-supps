@@ -1,0 +1,40 @@
+/* Supps Audit Navigation Stability Fixes */
+
+/* Prevent header from being affected by page reflows */
+#main-header {
+    contain: layout;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    will-change: transform;
+}
+
+/* Isolate chart section to prevent layout shifts */
+.chart-section {
+    contain: content;
+    isolation: isolate;
+}
+
+.chart-container {
+    contain: layout style;
+    will-change: transform;
+    transform: translateZ(0);
+}
+
+/* Prevent canvas resize from causing reflows */
+#combined-chart {
+    contain: strict;
+    transform: translateZ(0);
+}
+
+/* Ensure smooth transitions without layout thrashing */
+.search-results {
+    contain: layout;
+}
+
+.nutrients-list {
+    contain: layout;
+}
+
+.selected-list {
+    contain: layout;
+}

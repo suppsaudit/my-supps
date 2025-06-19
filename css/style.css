@@ -65,6 +65,10 @@ header {
     transition: all 0.3s ease;
     overflow: hidden;
     width: 100%;
+    /* Prevent header from being affected by page reflows */
+    contain: layout;
+    transform: translateZ(0); /* Enable hardware acceleration */
+    backface-visibility: hidden; /* Prevent flickering */
 }
 
 /* Header states */

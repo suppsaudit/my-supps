@@ -10,7 +10,7 @@ class DynamicNavigation {
             return;
         }
         
-        console.log('✅ Dynamic Navigation: Initializing...');
+        // console.log('✅ Dynamic Navigation: Initializing...');
         
         this.lastScrollY = window.scrollY;
         this.scrollThreshold = 50; // Reduced threshold for quicker response
@@ -34,14 +34,10 @@ class DynamicNavigation {
             }
         };
         
-        window.addEventListener('scroll', scrollHandler);
-        document.addEventListener('scroll', scrollHandler);
+        // Use only window scroll event to avoid duplicate handlers
+        window.addEventListener('scroll', scrollHandler, { passive: true });
         
-        // Also check for any scrollable containers
-        const container = document.querySelector('.container');
-        if (container) {
-            container.addEventListener('scroll', scrollHandler);
-        }
+        // Removed container scroll listener to avoid conflicts
         
         // Initialize state
         this.handleScroll();
@@ -52,31 +48,38 @@ class DynamicNavigation {
         const scrollDifference = currentScrollY - this.lastScrollY;
         
         // Only trigger changes if scroll is significant enough
-        if (Math.abs(scrollDifference) < 2) {
+        if (Math.abs(scrollDifference) < 5) {
             return;
         }
         
-        console.log('🔍 Scroll:', { currentScrollY, scrollDifference, isCollapsed: this.isCollapsed });
-        
-        // Check if we're at the top of the page
-        if (currentScrollY <= this.scrollThreshold) {
-            this.expandHeader();
-        }
-        // Scrolling down
-        else if (scrollDifference > 0 && currentScrollY > this.scrollThreshold) {
-            this.collapseHeader();
-        }
-        // Scrolling up
-        else if (scrollDifference < 0) {
-            this.expandHeader();
+        // Debounce mechanism to prevent rapid state changes
+        if (this.scrollTimeout) {
+            clearTimeout(this.scrollTimeout);
         }
         
-        this.lastScrollY = currentScrollY;
+        this.scrollTimeout = setTimeout(() => {
+            // console.log('🔍 Scroll:', { currentScrollY, scrollDifference, isCollapsed: this.isCollapsed });
+            
+            // Check if we're at the top of the page
+            if (currentScrollY <= this.scrollThreshold) {
+                this.expandHeader();
+            }
+            // Scrolling down
+            else if (scrollDifference > 0 && currentScrollY > this.scrollThreshold) {
+                this.collapseHeader();
+            }
+            // Scrolling up
+            else if (scrollDifference < 0) {
+                this.expandHeader();
+            }
+            
+            this.lastScrollY = currentScrollY;
+        }, 50); // 50ms debounce
     }
     
     collapseHeader() {
         if (!this.isCollapsed) {
-            console.log('📱 Collapsing header');
+            // console.log('📱 Collapsing header');
             this.header.classList.add('collapsed');
             this.isCollapsed = true;
         }
@@ -84,7 +87,7 @@ class DynamicNavigation {
     
     expandHeader() {
         if (this.isCollapsed) {
-            console.log('📱 Expanding header');
+            // console.log('📱 Expanding header');
             this.header.classList.remove('collapsed');
             this.isCollapsed = false;
         }
@@ -102,7 +105,7 @@ class DynamicNavigation {
     }
     
     function setupNavigation() {
-        console.log('🚀 Setting up Dynamic Navigation...');
+        // console.log('🚀 Setting up Dynamic Navigation...');
         const nav = new DynamicNavigation();
         
         // Store navigation instance globally for debugging

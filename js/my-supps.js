@@ -438,6 +438,17 @@ async function addToMySupps(supplementId) {
             }
             
             localStorage.setItem('mockUserSupplements', JSON.stringify(mockUserSupps));
+            
+            // Auto-generate schedule for demo mode
+            if (window.scheduleGenerator) {
+                console.log('🗓️ Generating demo schedule...');
+                const scheduleResult = await window.scheduleGenerator.autoGenerateSchedule(currentUser.id, supplementId);
+                if (scheduleResult.success) {
+                    console.log('✅ Demo schedule generated successfully');
+                } else {
+                    console.log('⚠️ Demo schedule generation failed:', scheduleResult.error);
+                }
+            }
         } else {
             const { error } = await supabase
                 .from('user_supplements')
@@ -452,7 +463,13 @@ async function addToMySupps(supplementId) {
             
             // Auto-generate intake schedule
             if (window.scheduleGenerator) {
-                await window.scheduleGenerator.autoGenerateSchedule(currentUser.id, supplementId);
+                console.log('🗓️ Generating intake schedule...');
+                const scheduleResult = await window.scheduleGenerator.autoGenerateSchedule(currentUser.id, supplementId);
+                if (scheduleResult.success) {
+                    console.log('✅ Schedule generated successfully');
+                } else {
+                    console.log('⚠️ Schedule generation failed:', scheduleResult.error);
+                }
             }
         }
         

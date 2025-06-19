@@ -84,24 +84,49 @@ async function loadUserSchedules() {
         
         // Check if we're in demo mode
         if (window.isDemo || !window.supabase) {
-            // Demo mode: create mock schedules based on user supplements
+            // Load from localStorage if available
+            const savedSchedules = JSON.parse(localStorage.getItem('mockUserSchedules') || '[]');
             const mockUserSupps = JSON.parse(localStorage.getItem('mockUserSupplements') || '[]');
             const mockSupplements = JSON.parse(localStorage.getItem('mockSupplements') || '[]');
             
             userSchedules = [];
             
-            mockUserSupps
-                .filter(us => us.user_id === user.id && us.is_my_supps)
-                .forEach(us => {
-                    const supplement = mockSupplements.find(s => s.id === us.supplement_id);
-                    if (supplement) {
-                        // Generate schedules based on dosage instructions
-                        const schedules = generateMockSchedules(supplement);
-                        userSchedules.push(...schedules);
-                    }
-                });
+            // Use saved schedules if available
+            if (savedSchedules.length > 0) {
+                userSchedules = savedSchedules
+                    .filter(s => s.user_id === user.id)
+                    .map(schedule => {
+                        const supplement = mockSupplements.find(s => s.id === schedule.supplement_id);
+                        return {
+                            ...schedule,
+                            supplements: supplement || {
+                                id: schedule.supplement_id,
+                                name_ja: 'Unknown Supplement',
+                                name_en: 'Unknown Supplement',
+                                brand: 'Unknown Brand',
+                                serving_size: '1回分'
+                            }
+                        };
+                    });
+            } else {
+                // Generate schedules for existing supplements
+                mockUserSupps
+                    .filter(us => us.user_id === user.id && us.is_my_supps)
+                    .forEach(us => {
+                        const supplement = mockSupplements.find(s => s.id === us.supplement_id);
+                        if (supplement) {
+                            const schedules = generateMockSchedules(supplement);
+                            userSchedules.push(...schedules);
+                        }
+                    });
                 
-            console.log('Demo mode: loaded mock schedules', userSchedules);
+                // Save generated schedules
+                if (userSchedules.length > 0) {
+                    localStorage.setItem('mockUserSchedules', JSON.stringify(userSchedules));
+                }
+            }
+                
+            console.log('Demo mode: loaded schedules', userSchedules);
             return;
         }
         
@@ -188,6 +213,22 @@ async function loadDailyIntakeLogs() {
         const user = await getCurrentUser();
         const today = new Date().toISOString().split('T')[0];
         
+        if (window.isDemo || !window.supabase) {
+            // Demo mode: load from localStorage
+            const mockLogs = JSON.parse(localStorage.getItem('mockDailyIntakeLogs') || '{}');
+            dailyIntakeLogs = {};
+            
+            // Filter logs for today and convert to lookup object
+            Object.values(mockLogs).forEach(log => {
+                if (log.taken_date === today) {
+                    dailyIntakeLogs[log.schedule_id] = log;
+                }
+            });
+            
+            console.log('Demo mode: loaded intake logs', dailyIntakeLogs);
+            return;
+        }
+        
         const { data, error } = await supabase
             .from('daily_intake_logs')
             .select('*')
@@ -269,43 +310,74 @@ window.toggleIntake = async function(scheduleId, isChecked) {
         const user = await getCurrentUser();
         const today = new Date().toISOString().split('T')[0];
         
-        if (isChecked) {
-            // Create or update intake log
-            const { error } = await supabase
-                .from('daily_intake_logs')
-                .upsert({
-                    user_id: user.id,
+        console.log('🔄 Toggling intake:', { scheduleId, isChecked, today });
+        
+        if (window.isDemo || !window.supabase) {
+            // Demo mode: save to localStorage
+            const mockLogs = JSON.parse(localStorage.getItem('mockDailyIntakeLogs') || '{}');
+            const logKey = `${scheduleId}-${today}`;
+            
+            if (isChecked) {
+                mockLogs[logKey] = {
                     schedule_id: scheduleId,
                     taken_date: today,
                     is_taken: true,
                     taken_at: new Date().toISOString()
-                }, {
-                    onConflict: 'user_id,schedule_id,taken_date'
-                });
-                
-            if (error) throw error;
+                };
+                dailyIntakeLogs[scheduleId] = mockLogs[logKey];
+            } else {
+                if (mockLogs[logKey]) {
+                    mockLogs[logKey].is_taken = false;
+                    mockLogs[logKey].taken_at = null;
+                }
+                if (dailyIntakeLogs[scheduleId]) {
+                    dailyIntakeLogs[scheduleId].is_taken = false;
+                    dailyIntakeLogs[scheduleId].taken_at = null;
+                }
+            }
             
-            // Update local data
-            dailyIntakeLogs[scheduleId] = {
-                schedule_id: scheduleId,
-                is_taken: true,
-                taken_at: new Date().toISOString()
-            };
+            localStorage.setItem('mockDailyIntakeLogs', JSON.stringify(mockLogs));
+            console.log('💾 Saved to localStorage:', mockLogs);
         } else {
-            // Update to not taken
-            const { error } = await supabase
-                .from('daily_intake_logs')
-                .update({ is_taken: false, taken_at: null })
-                .eq('user_id', user.id)
-                .eq('schedule_id', scheduleId)
-                .eq('taken_date', today);
+            // Database mode
+            if (isChecked) {
+                // Create or update intake log
+                const { error } = await supabase
+                    .from('daily_intake_logs')
+                    .upsert({
+                        user_id: user.id,
+                        schedule_id: scheduleId,
+                        taken_date: today,
+                        is_taken: true,
+                        taken_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'user_id,schedule_id,taken_date'
+                    });
+                    
+                if (error) throw error;
                 
-            if (error) throw error;
-            
-            // Update local data
-            if (dailyIntakeLogs[scheduleId]) {
-                dailyIntakeLogs[scheduleId].is_taken = false;
-                dailyIntakeLogs[scheduleId].taken_at = null;
+                // Update local data
+                dailyIntakeLogs[scheduleId] = {
+                    schedule_id: scheduleId,
+                    is_taken: true,
+                    taken_at: new Date().toISOString()
+                };
+            } else {
+                // Update to not taken
+                const { error } = await supabase
+                    .from('daily_intake_logs')
+                    .update({ is_taken: false, taken_at: null })
+                    .eq('user_id', user.id)
+                    .eq('schedule_id', scheduleId)
+                    .eq('taken_date', today);
+                    
+                if (error) throw error;
+                
+                // Update local data
+                if (dailyIntakeLogs[scheduleId]) {
+                    dailyIntakeLogs[scheduleId].is_taken = false;
+                    dailyIntakeLogs[scheduleId].taken_at = null;
+                }
             }
         }
         
@@ -313,8 +385,10 @@ window.toggleIntake = async function(scheduleId, isChecked) {
         updateCurrentScoreChart();
         updateStats();
         
+        console.log('✅ Successfully toggled intake status');
+        
     } catch (error) {
-        console.error('Error toggling intake:', error);
+        console.error('❌ Error toggling intake:', error);
         // Revert checkbox state on error
         const checkbox = document.querySelector(`input[onchange="toggleIntake('${scheduleId}', this.checked)"]`);
         if (checkbox) {

@@ -957,14 +957,7 @@ function updateSelectedCount() {
 
 // Duplicate function removed - using the main one above
 
-// Initialize the combined nutrients chart
-function initializeCombinedChart() {
-    const canvas = document.getElementById('combined-chart');
-    const placeholder = document.getElementById('chart-placeholder');
-    
-    // Show placeholder initially
-    showChartPlaceholder();
-}
+// Removed duplicate function - using the main initializeCombinedChart above
 
 // Calculate combined nutrients from selected supplements
 async function calculateCombinedNutrients() {
@@ -1145,10 +1138,15 @@ function displayCombinedChart(nutrients) {
     }
     
     // レスポンシブ対応：画面サイズに応じてCanvasサイズを調整
+    // Prevent reflow during chart updates
     const container = canvas.parentElement;
     const containerSize = Math.min(container.offsetWidth, container.offsetHeight, 500);
-    canvas.width = containerSize;
-    canvas.height = containerSize;
+    
+    // Only resize if dimensions actually changed
+    if (canvas.width !== containerSize || canvas.height !== containerSize) {
+        canvas.width = containerSize;
+        canvas.height = containerSize;
+    }
     
     combinedChart = new Chart(ctx, {
         type: 'radar',
@@ -1181,6 +1179,8 @@ function displayCombinedChart(nutrients) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            // Prevent resize observer from causing layout shifts
+            resizeDelay: 100,
             scales: {
                 r: {
                     beginAtZero: true,
@@ -1230,7 +1230,17 @@ function displayCombinedChart(nutrients) {
             },
             animation: {
                 duration: 1000,
-                easing: 'easeInOutQuart'
+                easing: 'easeInOutQuart',
+                // Prevent scroll jumps during animation
+                onComplete: function() {
+                    // Ensure no scroll position changes after chart animation
+                    const currentScroll = window.scrollY;
+                    requestAnimationFrame(() => {
+                        if (window.scrollY !== currentScroll) {
+                            window.scrollTo(0, currentScroll);
+                        }
+                    });
+                }
             }
         }
     });

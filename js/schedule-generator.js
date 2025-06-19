@@ -116,8 +116,11 @@ function getDefaultTimes(frequency) {
 // Save schedule to database
 async function saveIntakeSchedule(userId, supplementId, instructions) {
     try {
+        console.log('💾 Saving schedule:', { userId, supplementId, instructions });
+        
         // Generate schedules
         const schedules = await generateIntakeSchedule(supplementId, instructions);
+        console.log('📅 Generated schedules:', schedules);
         
         // Prepare data for insertion
         const scheduleData = schedules.map(schedule => ({
@@ -125,7 +128,31 @@ async function saveIntakeSchedule(userId, supplementId, instructions) {
             ...schedule
         }));
         
-        // Insert schedules
+        // Handle demo mode
+        if (window.isDemo || !window.supabase) {
+            // Save to localStorage for demo mode
+            const existingSchedules = JSON.parse(localStorage.getItem('mockUserSchedules') || '[]');
+            
+            // Remove existing schedules for this supplement
+            const filtered = existingSchedules.filter(
+                s => !(s.user_id === userId && s.supplement_id === supplementId)
+            );
+            
+            // Add new schedules with mock IDs
+            scheduleData.forEach((schedule, index) => {
+                filtered.push({
+                    ...schedule,
+                    id: `mock-schedule-${supplementId}-${schedule.time_of_day}-${Date.now()}-${index}`
+                });
+            });
+            
+            localStorage.setItem('mockUserSchedules', JSON.stringify(filtered));
+            console.log('💾 Saved to localStorage:', filtered);
+            
+            return { success: true, data: scheduleData };
+        }
+        
+        // Insert schedules to database
         const { data, error } = await supabase
             .from('user_intake_schedules')
             .upsert(scheduleData, {
@@ -137,7 +164,7 @@ async function saveIntakeSchedule(userId, supplementId, instructions) {
         return { success: true, data };
         
     } catch (error) {
-        console.error('Error saving intake schedule:', error);
+        console.error('❌ Error saving intake schedule:', error);
         return { success: false, error };
     }
 }
@@ -186,37 +213,91 @@ function getScheduleSummary(schedules) {
 // Auto-generate schedules when adding supplement to My Supps
 async function autoGenerateSchedule(userId, supplementId) {
     try {
-        // Get supplement data from DSLD API or database
-        const { data: supplement, error } = await supabase
-            .from('supplements')
-            .select('*')
-            .eq('id', supplementId)
-            .single();
+        console.log('🔄 Auto-generating schedule for:', { userId, supplementId });
         
-        if (error) throw error;
-        
-        // Look for dosage instructions in supplement data
-        // This would need to be extracted from DSLD API data
+        // Try to get supplement data from database first
+        let supplement = null;
         let instructions = '';
         
-        // Check common fields where instructions might be stored
-        if (supplement.dosage_instructions) {
-            instructions = supplement.dosage_instructions;
-        } else if (supplement.serving_size && supplement.serving_size.includes('回')) {
-            instructions = supplement.serving_size;
-        } else {
-            // Default to once daily if no instructions found
-            instructions = '1日1回';
+        if (!window.isDemo && window.supabase) {
+            const { data, error } = await supabase
+                .from('supplements')
+                .select('*')
+                .eq('id', supplementId)
+                .single();
+            
+            if (!error && data) {
+                supplement = data;
+            }
+        }
+        
+        // If not found in database, get from mock data or DSLD API
+        if (!supplement) {
+            const mockSupplements = JSON.parse(localStorage.getItem('mockSupplements') || '[]');
+            supplement = mockSupplements.find(s => s.id === supplementId);
+            
+            if (!supplement) {
+                console.log('⚠️ Supplement not found, using default schedule');
+                instructions = '1日1回';
+            }
+        }
+        
+        if (supplement) {
+            // Extract dosage instructions from supplement data
+            instructions = extractDosageInstructions(supplement);
+            console.log('📋 Extracted instructions:', instructions);
         }
         
         // Generate and save schedule
-        return await saveIntakeSchedule(userId, supplementId, instructions);
+        const result = await saveIntakeSchedule(userId, supplementId, instructions);
+        console.log('💾 Schedule save result:', result);
+        
+        return result;
         
     } catch (error) {
-        console.error('Error auto-generating schedule:', error);
+        console.error('❌ Error auto-generating schedule:', error);
         // Default schedule if error occurs
         return await saveIntakeSchedule(userId, supplementId, '1日1回');
     }
+}
+
+// Extract dosage instructions from supplement data
+function extractDosageInstructions(supplement) {
+    // Check various fields where dosage information might be stored
+    const fields = [
+        'dosage_instructions',
+        'dosage_form',
+        'serving_size',
+        'directions_for_use',
+        'instructions',
+        'label_serving_info'
+    ];
+    
+    for (const field of fields) {
+        if (supplement[field] && typeof supplement[field] === 'string') {
+            const value = supplement[field];
+            
+            // Look for common Japanese patterns
+            if (value.includes('朝晩') || value.includes('2回')) {
+                return '朝晩2回';
+            }
+            if (value.includes('朝昼晩') || value.includes('3回')) {
+                return '朝昼晩3回';
+            }
+            if (value.includes('1日1回') || value.includes('daily')) {
+                return '1日1回';
+            }
+            if (value.includes('朝') && !value.includes('晩')) {
+                return '1日1回 朝';
+            }
+            if (value.includes('夜') || value.includes('就寝前')) {
+                return '1日1回 就寝前';
+            }
+        }
+    }
+    
+    // Default to once daily
+    return '1日1回';
 }
 
 // Export functions for use in other modules
