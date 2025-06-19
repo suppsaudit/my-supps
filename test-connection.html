@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Supabase Connection Test</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>🔧 MY SUPPS - Production Database Test</h1>
+    <div id="results"></div>
+
+    <script>
+        async function testProductionDatabase() {
+            const results = document.getElementById('results');
+            
+            try {
+                // Use production credentials
+                const supabase = window.supabase.createClient(
+                    'https://xkcaxrvnvefstzvpldzf.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhrY2F4cnZudmVmc3R6dnBsZHpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAwNjc3ODYsImV4cCI6MjA2NTY0Mzc4Nn0.KPI-586rKSlcGTi9o2YWR1n1pxfaqoPaPouclCu6Q5I'
+                );
+
+                results.innerHTML += '<p>🔗 Testing Supabase connection...</p>';
+
+                // Test connection
+                const { data, error } = await supabase.from('supplements').select('count', { count: 'exact', head: true });
+                
+                if (error) {
+                    if (error.code === 'PGRST116') {
+                        results.innerHTML += '<p>⚠️ Database connected but table "supplements" does not exist</p>';
+                        results.innerHTML += '<p>📊 This means schema needs to be created</p>';
+                        
+                        // Provide SQL for manual execution
+                        results.innerHTML += '<h2>🔧 Manual Setup Required</h2>';
+                        results.innerHTML += '<p>Execute this SQL in Supabase SQL Editor:</p>';
+                        results.innerHTML += '<textarea style="width:100%;height:400px;" readonly>' + 
+                            getProductionSQL() + '</textarea>';
+                        results.innerHTML += '<p><a href="https://supabase.com/dashboard/project/xkcaxrvnvefstzvpldzf/sql/new" target="_blank">Open Supabase SQL Editor</a></p>';
+                    } else {
+                        results.innerHTML += '<p>❌ Connection error: ' + error.message + '</p>';
+                    }
+                } else {
+                    results.innerHTML += '<p>✅ Database connected and supplements table exists!</p>';
+                    
+                    // Test other tables
+                    const tables = ['nutrients', 'user_supplements', 'user_intake_schedules'];
+                    for (const table of tables) {
+                        try {
+                            const { error: tableError } = await supabase.from(table).select('*').limit(1);
+                            if (tableError) {
+                                results.innerHTML += '<p>❌ ' + table + ': ' + tableError.message + '</p>';
+                            } else {
+                                results.innerHTML += '<p>✅ ' + table + ': OK</p>';
+                            }
+                        } catch (err) {
+                            results.innerHTML += '<p>❌ ' + table + ': ' + err.message + '</p>';
+                        }
+                    }
+                }
+
+                // Test authentication
+                results.innerHTML += '<h2>🔐 Testing Authentication</h2>';
+                const { data: user, error: authError } = await supabase.auth.getUser();
+                if (authError) {
+                    results.innerHTML += '<p>⚠️ Auth: ' + authError.message + '</p>';
+                } else if (user.user) {
+                    results.innerHTML += '<p>✅ User logged in: ' + user.user.email + '</p>';
+                } else {
+                    results.innerHTML += '<p>ℹ️ No user logged in (normal for test)</p>';
+                }
+
+            } catch (error) {
+                results.innerHTML += '<p>❌ Test failed: ' + error.message + '</p>';
+            }
+        }
+
+        function getProductionSQL() {
+            return `-- MY SUPPS Production Database Schema
+-- Execute in Supabase SQL Editor
+
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- 1. Supplements table (NIH DSLD API data)
+CREATE TABLE IF NOT EXISTS supplements (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    dsld_id TEXT UNIQUE NOT NULL,
+    name_en TEXT NOT NULL,
+    name_ja TEXT,
+    brand TEXT NOT NULL,
+    serving_size TEXT,
+    servings_per_container INTEGER,
+    image_url TEXT,
+    label_url TEXT,
+    string_id TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 2. Nutrients master
+CREATE TABLE IF NOT EXISTS nutrients (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name_ja TEXT NOT NULL,
+    name_en TEXT,
+    category TEXT,
+    rda_amount DECIMAL,
+    unit TEXT DEFAULT 'mg',
+    description_ja TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 3. Supplement-Nutrient relationships
+CREATE TABLE IF NOT EXISTS supplement_nutrients (
+    supplement_id UUID REFERENCES supplements(id) ON DELETE CASCADE,
+    nutrient_id UUID REFERENCES nutrients(id) ON DELETE CASCADE,
+    amount_per_serving DECIMAL NOT NULL,
+    unit TEXT NOT NULL,
+    daily_value_percent DECIMAL,
+    PRIMARY KEY (supplement_id, nutrient_id)
+);
+
+-- 4. User supplements (MY SUPPS)
+CREATE TABLE IF NOT EXISTS user_supplements (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    supplement_id UUID REFERENCES supplements(id) ON DELETE CASCADE,
+    is_selected BOOLEAN DEFAULT false,
+    is_my_supps BOOLEAN DEFAULT false,
+    added_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(user_id, supplement_id)
+);
+
+-- 5. User intake schedules
+CREATE TABLE IF NOT EXISTS user_intake_schedules (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    supplement_id UUID REFERENCES supplements(id) ON DELETE CASCADE,
+    time_of_day VARCHAR(20) NOT NULL,
+    timing_type VARCHAR(20),
+    frequency TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(user_id, supplement_id, time_of_day)
+);
+
+-- 6. Daily intake logs
+CREATE TABLE IF NOT EXISTS daily_intake_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    schedule_id UUID REFERENCES user_intake_schedules(id) ON DELETE CASCADE,
+    taken_date DATE NOT NULL,
+    is_taken BOOLEAN DEFAULT false,
+    taken_at TIMESTAMP,
+    UNIQUE(user_id, schedule_id, taken_date)
+);
+
+-- 7. Nutrient RDA/UL reference data
+CREATE TABLE IF NOT EXISTS nutrient_rda_ul (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    nutrient_id VARCHAR(50) NOT NULL,
+    nutrient_name VARCHAR(100) NOT NULL,
+    category VARCHAR(20),
+    unit VARCHAR(10),
+    age_group VARCHAR(50),
+    gender VARCHAR(10),
+    rda_ai_value VARCHAR(20),
+    rda_ai_type VARCHAR(5),
+    upper_limit_ul VARCHAR(20),
+    notes TEXT
+);
+
+-- Performance indexes
+CREATE INDEX IF NOT EXISTS idx_supplements_dsld_id ON supplements(dsld_id);
+CREATE INDEX IF NOT EXISTS idx_supplements_string_id ON supplements(string_id);
+CREATE INDEX IF NOT EXISTS idx_user_supplements_user_id ON user_supplements(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_intake_schedules_user_id ON user_intake_schedules(user_id);
+CREATE INDEX IF NOT EXISTS idx_daily_intake_logs_user_id ON daily_intake_logs(user_id);
+
+-- Row Level Security (RLS)
+ALTER TABLE user_supplements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_intake_schedules ENABLE ROW LEVEL SECURITY;
+ALTER TABLE daily_intake_logs ENABLE ROW LEVEL SECURITY;
+
+-- Comprehensive RLS policies
+DROP POLICY IF EXISTS "Users own supplements policy" ON user_supplements;
+CREATE POLICY "Users own supplements policy" ON user_supplements FOR ALL USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users own schedules policy" ON user_intake_schedules;
+CREATE POLICY "Users own schedules policy" ON user_intake_schedules FOR ALL USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users own logs policy" ON daily_intake_logs;
+CREATE POLICY "Users own logs policy" ON daily_intake_logs FOR ALL USING (auth.uid() = user_id);
+
+-- Public access for reference data
+ALTER TABLE supplements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE nutrients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE supplement_nutrients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE nutrient_rda_ul ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public supplements access" ON supplements;
+CREATE POLICY "Public supplements access" ON supplements FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public nutrients access" ON nutrients;
+CREATE POLICY "Public nutrients access" ON nutrients FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public supplement_nutrients access" ON supplement_nutrients;
+CREATE POLICY "Public supplement_nutrients access" ON supplement_nutrients FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public nutrient_rda_ul access" ON nutrient_rda_ul;
+CREATE POLICY "Public nutrient_rda_ul access" ON nutrient_rda_ul FOR SELECT USING (true);
+
+-- Success confirmation
+SELECT 'MY SUPPS production database schema deployed successfully!' as confirmation;`;
+        }
+
+        // Run test on page load
+        document.addEventListener('DOMContentLoaded', testProductionDatabase);
+    </script>
+</body>
+</html>
