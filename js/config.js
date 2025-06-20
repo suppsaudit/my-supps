@@ -57,6 +57,12 @@ window.APP_CONFIG = {
         EXPORT_DATA: true
     },
     
+    // Google Calendar API設定
+    GOOGLE_CALENDAR: {
+        CLIENT_ID: '123456789-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com', // TODO: Replace with actual Google OAuth client ID
+        API_KEY: 'AIzaSyABC123DEF456GHI789JKL012MNO345PQR678'    // TODO: Replace with actual Google Calendar API key
+    },
+    
     // デフォルト設定
     DEFAULTS: {
         LANGUAGE: 'ja',
