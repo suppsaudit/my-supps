@@ -25,6 +25,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         await loadUserSchedules();
         await loadDailyIntakeLogs();
         
+        // If no schedules found but user has supplements, regenerate schedules
+        if (userSchedules.length === 0) {
+            console.log('🔄 No schedules found, attempting to regenerate...');
+            await regenerateAllSchedules();
+        }
+        
         // Update UI
         updateScheduleDisplay();
         updateStats();
@@ -48,14 +54,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 function setCurrentTimePeriod() {
     const hour = new Date().getHours();
     
-    if (hour >= 5 && hour < 11) {
+    if (hour >= 5 && hour < 12) {
         currentTimeOfDay = 'morning';
-    } else if (hour >= 11 && hour < 17) {
+    } else if (hour >= 12 && hour < 18) {
         currentTimeOfDay = 'day';
-    } else if (hour >= 17 && hour < 22) {
-        currentTimeOfDay = 'night';
     } else {
-        currentTimeOfDay = 'before_sleep';
+        currentTimeOfDay = 'night';
     }
     
     // Update active tab
@@ -84,10 +88,19 @@ async function loadUserSchedules() {
         
         // Check if we're in demo mode
         if (window.isDemo || !window.supabase) {
+            console.log('📱 Demo mode: Loading schedules from localStorage');
+            
             // Load from localStorage if available
             const savedSchedules = JSON.parse(localStorage.getItem('mockUserSchedules') || '[]');
             const mockUserSupps = JSON.parse(localStorage.getItem('mockUserSupplements') || '[]');
             const mockSupplements = JSON.parse(localStorage.getItem('mockSupplements') || '[]');
+            
+            console.log('📊 Demo data loaded:', {
+                savedSchedules: savedSchedules.length,
+                mockUserSupps: mockUserSupps.length,
+                mockSupplements: mockSupplements.length,
+                userId: user.id
+            });
             
             userSchedules = [];
             
@@ -108,21 +121,33 @@ async function loadUserSchedules() {
                             }
                         };
                     });
+                console.log('✅ Using existing schedules:', userSchedules.length);
             } else {
+                console.log('🔄 Generating new schedules from My Supps');
+                
                 // Generate schedules for existing supplements
-                mockUserSupps
-                    .filter(us => us.user_id === user.id && us.is_my_supps)
-                    .forEach(us => {
-                        const supplement = mockSupplements.find(s => s.id === us.supplement_id);
-                        if (supplement) {
-                            const schedules = generateMockSchedules(supplement);
-                            userSchedules.push(...schedules);
-                        }
-                    });
+                const userSupps = mockUserSupps.filter(us => us.user_id === user.id && us.is_my_supps);
+                console.log('👤 User supplements found:', userSupps.length);
+                
+                userSupps.forEach(us => {
+                    const supplement = mockSupplements.find(s => s.id === us.supplement_id);
+                    if (supplement) {
+                        console.log('📅 Generating schedule for:', supplement.name_ja || supplement.name_en);
+                        const schedules = generateMockSchedules(supplement);
+                        // Add user_id to each schedule
+                        schedules.forEach(schedule => {
+                            schedule.user_id = user.id;
+                        });
+                        userSchedules.push(...schedules);
+                    }
+                });
+                
+                console.log('🗓️ Total schedules generated:', userSchedules.length);
                 
                 // Save generated schedules
                 if (userSchedules.length > 0) {
                     localStorage.setItem('mockUserSchedules', JSON.stringify(userSchedules));
+                    console.log('💾 Schedules saved to localStorage');
                 }
             }
                 
@@ -156,9 +181,38 @@ async function loadUserSchedules() {
 // Generate mock schedules for demo mode
 function generateMockSchedules(supplement) {
     const schedules = [];
-    const dosage = supplement.dosage_instructions || '1日1回';
     
-    if (dosage.includes('2回')) {
+    // Extract dosage information from various possible fields
+    const dosageFields = [
+        supplement.dosage_instructions,
+        supplement.dosage_form,
+        supplement.directions_for_use,
+        supplement.instructions,
+        supplement.label_serving_info
+    ];
+    
+    let dosage = '1日1回'; // Default
+    
+    // Check all possible fields for dosage information
+    for (const field of dosageFields) {
+        if (field && typeof field === 'string') {
+            if (field.includes('朝晩') || field.includes('2回')) {
+                dosage = '朝晩2回';
+                break;
+            } else if (field.includes('朝昼晩') || field.includes('3回')) {
+                dosage = '朝昼晩3回';
+                break;
+            } else if (field.includes('1日1回') || field.includes('daily')) {
+                dosage = '1日1回';
+                break;
+            }
+        }
+    }
+    
+    console.log(`💊 Generating schedule for ${supplement.name_ja || supplement.name_en}: ${dosage}`);
+    
+    // Generate schedules based on dosage
+    if (dosage.includes('朝晩') || dosage.includes('2回')) {
         schedules.push({
             id: `mock-${supplement.id}-morning`,
             supplement_id: supplement.id,
@@ -170,7 +224,7 @@ function generateMockSchedules(supplement) {
                 name_ja: supplement.name_ja,
                 name_en: supplement.name_en,
                 brand: supplement.brand,
-                serving_size: supplement.serving_size
+                serving_size: supplement.serving_size || '1回分'
             }
         });
         schedules.push({
@@ -184,10 +238,29 @@ function generateMockSchedules(supplement) {
                 name_ja: supplement.name_ja,
                 name_en: supplement.name_en,
                 brand: supplement.brand,
-                serving_size: supplement.serving_size
+                serving_size: supplement.serving_size || '1回分'
             }
         });
+    } else if (dosage.includes('朝昼晩') || dosage.includes('3回')) {
+        ['morning', 'day', 'night'].forEach((timeOfDay, index) => {
+            const timingTypes = ['朝食後', '昼食後', '夕食後'];
+            schedules.push({
+                id: `mock-${supplement.id}-${timeOfDay}`,
+                supplement_id: supplement.id,
+                time_of_day: timeOfDay,
+                timing_type: timingTypes[index],
+                frequency: dosage,
+                supplements: {
+                    id: supplement.id,
+                    name_ja: supplement.name_ja,
+                    name_en: supplement.name_en,
+                    brand: supplement.brand,
+                    serving_size: supplement.serving_size || '1回分'
+                }
+            });
+        });
     } else {
+        // Default: once daily in the morning
         schedules.push({
             id: `mock-${supplement.id}-morning`,
             supplement_id: supplement.id,
@@ -199,12 +272,78 @@ function generateMockSchedules(supplement) {
                 name_ja: supplement.name_ja,
                 name_en: supplement.name_en,
                 brand: supplement.brand,
-                serving_size: supplement.serving_size
+                serving_size: supplement.serving_size || '1回分'
             }
         });
     }
     
+    console.log(`✅ Generated ${schedules.length} schedule(s) for ${supplement.name_ja || supplement.name_en}`);
     return schedules;
+}
+
+// Regenerate all schedules for user's supplements
+async function regenerateAllSchedules() {
+    try {
+        const user = await getCurrentUser();
+        if (!user) return;
+        
+        console.log('🔄 Regenerating all schedules...');
+        
+        if (window.isDemo || !window.supabase) {
+            // Demo mode: regenerate from localStorage
+            const mockUserSupps = JSON.parse(localStorage.getItem('mockUserSupplements') || '[]');
+            const mockSupplements = JSON.parse(localStorage.getItem('mockSupplements') || '[]');
+            
+            const userSupps = mockUserSupps.filter(us => us.user_id === user.id && us.is_my_supps);
+            console.log(`🔍 Found ${userSupps.length} user supplements to process`);
+            
+            if (userSupps.length > 0) {
+                userSchedules = [];
+                
+                for (const us of userSupps) {
+                    const supplement = mockSupplements.find(s => s.id === us.supplement_id);
+                    if (supplement) {
+                        console.log(`📅 Creating schedule for: ${supplement.name_ja || supplement.name_en}`);
+                        if (window.scheduleGenerator) {
+                            await window.scheduleGenerator.autoGenerateSchedule(user.id, supplement.id);
+                        } else {
+                            // Fallback: generate directly
+                            const schedules = generateMockSchedules(supplement);
+                            schedules.forEach(schedule => {
+                                schedule.user_id = user.id;
+                            });
+                            userSchedules.push(...schedules);
+                        }
+                    }
+                }
+                
+                // Reload schedules after generation
+                await loadUserSchedules();
+                console.log(`✅ Regenerated ${userSchedules.length} schedules`);
+            }
+        } else {
+            // Database mode: query user supplements and regenerate
+            const { data: userSupps } = await supabase
+                .from('user_supplements')
+                .select('supplement_id')
+                .eq('user_id', user.id)
+                .eq('is_my_supps', true);
+                
+            if (userSupps && userSupps.length > 0) {
+                for (const us of userSupps) {
+                    if (window.scheduleGenerator) {
+                        await window.scheduleGenerator.autoGenerateSchedule(user.id, us.supplement_id);
+                    }
+                }
+                
+                // Reload schedules after generation
+                await loadUserSchedules();
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Error regenerating schedules:', error);
+    }
 }
 
 // Load daily intake logs for today
@@ -264,10 +403,16 @@ function updateScheduleDisplay() {
     console.log('Schedules for current time:', schedulesForTime);
     
     if (schedulesForTime.length === 0) {
+        // Check if user has any supplements at all
+        const totalSchedules = userSchedules.length;
+        const message = totalSchedules === 0 
+            ? 'サプリメントが登録されていません' 
+            : 'この時間帯に摂取するサプリメントはありません';
+        
         scheduleContent.innerHTML = `
             <div class="empty-state">
                 <div class="empty-state-icon">📅</div>
-                <p class="empty-state-text">この時間帯に摂取するサプリメントはありません</p>
+                <p class="empty-state-text">${message}</p>
                 <a href="my-supps.html" class="empty-state-action">
                     <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -568,13 +713,23 @@ async function updateStats() {
         const user = await getCurrentUser();
         
         // Total supplements
-        const { count: totalSupps } = await supabase
-            .from('user_supplements')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .eq('is_my_supps', true);
+        let totalSupps = 0;
         
-        document.getElementById('totalSupplements').textContent = totalSupps || 0;
+        if (window.isDemo || !window.supabase) {
+            // Demo mode: count from localStorage
+            const mockUserSupps = JSON.parse(localStorage.getItem('mockUserSupplements') || '[]');
+            totalSupps = mockUserSupps.filter(us => us.user_id === user.id && us.is_my_supps).length;
+        } else {
+            // Database mode
+            const { count } = await supabase
+                .from('user_supplements')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', user.id)
+                .eq('is_my_supps', true);
+            totalSupps = count || 0;
+        }
+        
+        document.getElementById('totalSupplements').textContent = totalSupps;
         
         // Today's intake rate
         const totalSchedules = userSchedules.length;
@@ -589,7 +744,15 @@ async function updateStats() {
         const nutrientCount = currentScoreChart?.data.labels.length || 0;
         document.getElementById('nutrientCount').textContent = nutrientCount;
         
+        console.log('📊 Stats updated:', { totalSupps, totalSchedules, takenCount, intakeRate });
+        
     } catch (error) {
         console.error('Error updating stats:', error);
     }
+}
+
+// Show intake history modal
+window.showIntakeHistory = function() {
+    // TODO: Implement intake history modal
+    alert('過去の摂取ログ機能は近日実装予定です');
 }

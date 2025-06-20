@@ -26,12 +26,12 @@
         <div class="container">
             <div class="header-content">
                 <div class="logo">
-                    <h1><span>M</span><span>Y</span> <span>S</span><span>U</span><span>P</span><span>P</span><span class="tilted-p">S</span></h1>
-                    <p class="tagline">サプリメントをData Drivenに管理するなら。</p>
+                    <a href="index.html" class="logo-link">
+                        <h1><span>M</span><span>Y</span> <span>S</span><span>U</span><span>P</span><span>P</span><span class="tilted-p">S</span></h1>
+                        <p class="tagline">サプリメントをData Drivenに管理するなら。</p>
+                    </a>
                 </div>
                 <nav class="navigation">
-                    <a href="index.html" class="nav-link">ホーム</a>
-                    <a href="products.html" class="nav-link">商品一覧</a>
                     <a href="my-supps.html" class="nav-link">MY SUPPS</a>
                     <a href="supps-audit.html" class="nav-link">Supps Audit</a>
                     <a href="dashboard.html" class="nav-link active">マイページ</a>
@@ -78,20 +78,13 @@
                 <!-- Time Period Tabs -->
                 <div class="time-tabs">
                     <button class="time-tab active" data-time="morning" onclick="switchTimePeriod('morning')">
-                        <span class="tab-icon">🌅</span>
                         Morning
                     </button>
                     <button class="time-tab" data-time="day" onclick="switchTimePeriod('day')">
-                        <span class="tab-icon">☀️</span>
-                        Day
+                        Afternoon
                     </button>
                     <button class="time-tab" data-time="night" onclick="switchTimePeriod('night')">
-                        <span class="tab-icon">🌙</span>
                         Night
-                    </button>
-                    <button class="time-tab" data-time="before_sleep" onclick="switchTimePeriod('before_sleep')">
-                        <span class="tab-icon">😴</span>
-                        Before Sleep
                     </button>
                 </div>
 
@@ -101,6 +94,16 @@
                         <div class="spinner"></div>
                         <p>スケジュールを読み込み中...</p>
                     </div>
+                </div>
+
+                <!-- Footer Links -->
+                <div class="schedule-footer">
+                    <a href="my-supps.html" class="footer-link">
+                        >> MY SUPPS
+                    </a>
+                    <a href="#" class="footer-link" onclick="showIntakeHistory()">
+                        >> 過去の摂取ログ▽
+                    </a>
                 </div>
             </section>
 

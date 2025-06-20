@@ -249,7 +249,7 @@
 }
 
 .toggle-input:checked + .toggle-slider {
-    background: linear-gradient(45deg, #FF1493, #FF69B4);
+    background: linear-gradient(45deg, #3B82F6, #8B5CF6);
 }
 
 .toggle-input:checked + .toggle-slider:before {
@@ -277,6 +277,28 @@
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* Schedule Footer Links */
+.schedule-footer {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-light);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.footer-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.footer-link:hover {
+    color: var(--text-primary);
 }
 
 /* Stats Section */

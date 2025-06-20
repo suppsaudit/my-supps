@@ -99,6 +99,36 @@ header.collapsed .logo h1 {
     transition: all 0.3s ease;
 }
 
+.logo-link {
+    text-decoration: none !important;
+    color: inherit;
+    display: block;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.logo-link:hover {
+    transform: translateY(-1px);
+    text-decoration: none !important;
+}
+
+.logo-link:hover h1 {
+    color: var(--primary-color) !important;
+}
+
+.logo-link:hover .tagline {
+    color: var(--primary-color) !important;
+}
+
+/* Ensure logo link styling works */
+a.logo-link {
+    text-decoration: none !important;
+}
+
+a.logo-link:hover {
+    text-decoration: none !important;
+}
+
 .logo h1 {
     font-size: 2rem;
     font-weight: 900;

@@ -667,6 +667,63 @@ The header implements a dynamic collapsing system that adapts to user scroll beh
 - config.js の全ページ読み込み
 - HTTP server必須（file://プロトコル制限回避）
 
+## Design Requirements (Updated 2025-06-20)
+
+### TODAY'S SCHEDULE Design Specifications
+
+Based on the provided design mockup:
+
+#### Layout Structure
+1. **CURRENT SCORE Section**
+   - Orange-colored radar chart showing nutritional intake
+   - Percentage values and nutrient names (ビタミンC, カルノシン, ビタミンE, etc.)
+   - RDA comparison display
+
+2. **TODAY'S SCHEDULE Section**
+   - Clean section title with ➕ button
+   - Three-tab layout: Morning / Afternoon / Night (not Day/Before Sleep)
+   - Time-based auto-switching (19:00 = Night tab active)
+
+#### Tab Design
+- Simple text tabs without icons
+- Clean, minimal styling
+- Active tab highlighting
+
+#### Supplement Item Layout
+Each supplement displays:
+- **Supplement name** (primary text, left-aligned)
+- **Timing info** (secondary text below name: 空腹時, 食後, etc.)
+- **Modern toggle switch** (right-aligned)
+  - Default: OFF (light gray)
+  - Active: Blue/Purple gradient
+  - Round, modern design
+
+#### Footer Links
+- ">> MY SUPPS" (links to my-supps.html)
+- ">> 過去の摂取ログ▽" (future feature)
+
+#### Color Palette
+- **Primary**: Orange (radar chart)
+- **Toggle Active**: Blue to Purple gradient (#3B82F6 to #8B5CF6)
+- **Background**: White
+- **Text**: Dark gray hierarchy
+- **Toggle Inactive**: Light gray (#E5E7EB)
+
+## Navigation Structure (Updated 2025-06-20)
+
+### Global Navigation Changes
+- **Removed**: "ホーム" and "商品一覧" from navigation
+- **Logo Link**: "MY SUPPS" logo now links to index.html (home page)
+- **Remaining Nav Items**: 
+  - MY SUPPS (my-supps.html)
+  - Supps Audit (supps-audit.html)
+  - マイページ (dashboard.html)
+
+### Logo Interaction
+- Clicking "MY SUPPS" logo takes users to home page
+- Hover effect: slight upward movement and color enhancement
+- Maintains visual consistency across all pages
+
 ## Common Tasks for Claude Code
 
 1. "Create the static HTML structure for supplement detail pages"
