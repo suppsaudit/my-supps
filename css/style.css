@@ -173,14 +173,18 @@ a.logo-link:hover {
 }
 
 .nav-link {
-    color: var(--text-secondary);
-    text-decoration: none;
+    color: var(--text-primary) !important;
+    text-decoration: none !important;
     transition: color 0.3s ease;
     font-weight: 500;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 .nav-link:hover, .nav-link.active {
-    color: var(--primary-color);
+    color: var(--primary-color) !important;
 }
 
 /* User Menu */

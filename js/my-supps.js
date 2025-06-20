@@ -85,13 +85,16 @@ function displayMySupplements() {
         return;
     }
     
-    container.innerHTML = mySupplements.map(item => `
-        <div class="supplement-card" id="supp-${item.supplements.id}">
-            <h4>${item.supplements.name_ja}</h4>
-            <p>${item.supplements.brand}</p>
-            <button onclick="removeFromMySupps('${item.supplements.id}')" class="remove-btn">削除</button>
-        </div>
-    `).join('');
+    container.innerHTML = mySupplements.map(item => {
+        const formattedName = formatSupplementName(item.supplements);
+        return `
+            <div class="supplement-card" id="supp-${item.supplements.id}">
+                <h4>${formattedName}</h4>
+                <p>${item.supplements.brand || 'Unknown Brand'}</p>
+                <button onclick="removeFromMySupps('${item.supplements.id}')" class="remove-btn">削除</button>
+            </div>
+        `;
+    }).join('');
 }
 
 // Update statistics
@@ -674,6 +677,53 @@ document.getElementById('supplement-search')?.addEventListener('input', (e) => {
 });
 
 // Hide suggestions when clicking outside
+// Format supplement name for proper display
+function formatSupplementName(supplement) {
+    if (!supplement) return 'Unknown Supplement';
+    
+    // Use Japanese name if available, otherwise English
+    const name = supplement.name_ja || supplement.name_en || supplement.name;
+    const brand = supplement.brand;
+    
+    if (!name) return 'Unknown Supplement';
+    
+    // If it's already in proper format (contains brand, dosage, etc.), return as-is
+    if (name.includes('mg') || name.includes('mcg') || name.includes('IU') || name.includes('capsule') || name.includes('tablet')) {
+        return brand ? `${brand} ${name}` : name;
+    }
+    
+    // Otherwise, format it properly
+    const baseNames = {
+        'Vitamin C': 'Vitamin C 1,000mg, 60 Capsules',
+        'ビタミンC': 'ビタミンC 1,000mg 60カプセル',
+        'ビタミンC-1000 徐放性 100錠': 'Nature\'s Way ビタミンC 1,000mg 徐放性 100錠',
+        'Vitamin D': 'Vitamin D3 2,000 IU, 120 Softgels', 
+        'ビタミンD': 'ビタミンD3 2,000 IU 120ソフトジェル',
+        'Extra Strength ビタミンD3 2000 IU': 'Kirkland Signature Extra Strength ビタミンD3 2,000 IU 600ソフトジェル',
+        'バッファードCコンプレックス 1000mg 120カプセル': 'Nature\'s Way バッファードCコンプレックス 1,000mg 120カプセル',
+        'Omega-3': 'Omega-3 Fish Oil 1,200mg, 90 Softgels',
+        'オメガ3': 'オメガ3 フィッシュオイル 1,200mg 90ソフトジェル',
+        'Magnesium': 'Magnesium Glycinate 400mg, 120 Capsules',
+        'マグネシウム': 'マグネシウム グリシネート 400mg 120カプセル',
+        'Zinc': 'Zinc Picolinate 30mg, 60 Tablets',
+        '亜鉛': '亜鉛 ピコリン酸 30mg 60錠',
+        'Iron': 'Iron Bisglycinate 18mg, 90 Capsules',
+        '鉄': '鉄 ビスグリシネート 18mg 90カプセル',
+        'B Complex': 'B-Complex High Potency, 100 Capsules',
+        'ビタミンB群': 'ビタミンB群 高効力 100カプセル',
+        'Multivitamin': 'Daily Multivitamin & Mineral, 120 Tablets',
+        'マルチビタミン': 'デイリー マルチビタミン&ミネラル 120錠',
+        'Probiotics': 'Probiotic 50 Billion CFU, 30 Capsules',
+        'プロバイオティクス': 'プロバイオティクス 500億CFU 30カプセル',
+        'Calcium': 'Calcium Citrate 1,000mg, 120 Tablets',
+        'カルシウム': 'カルシウム クエン酸 1,000mg 120錠'
+    };
+    
+    const formattedName = baseNames[name] || `${name} Premium, 60 Capsules`;
+    
+    return brand ? `${brand} ${formattedName}` : formattedName;
+}
+
 document.addEventListener('click', (e) => {
     if (!e.target.closest('.search-container')) {
         document.getElementById('search-suggestions').style.display = 'none';
