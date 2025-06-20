@@ -466,19 +466,29 @@ async function loadDailyIntakeLogs() {
         const user = await getCurrentUser();
         const today = new Date().toISOString().split('T')[0];
         
+        console.log('📅 Loading daily intake logs for:', today);
+        
         if (window.isDemo || !window.supabase) {
             // Demo mode: load from localStorage
-            const mockLogs = JSON.parse(localStorage.getItem('mockDailyIntakeLogs') || '{}');
+            const mockLogsRaw = localStorage.getItem('mockDailyIntakeLogs') || '{}';
+            console.log('📦 Raw localStorage data:', mockLogsRaw);
+            
+            const mockLogs = JSON.parse(mockLogsRaw);
+            console.log('📊 Parsed mock logs:', mockLogs);
+            
             dailyIntakeLogs = {};
             
             // Filter logs for today and convert to lookup object
             Object.values(mockLogs).forEach(log => {
+                console.log('🔍 Checking log:', log);
                 if (log.taken_date === today) {
                     dailyIntakeLogs[log.schedule_id] = log;
+                    console.log('✅ Added log for schedule:', log.schedule_id);
                 }
             });
             
-            console.log('Demo mode: loaded intake logs', dailyIntakeLogs);
+            console.log('📋 Final dailyIntakeLogs:', dailyIntakeLogs);
+            console.log('📊 Total logs loaded for today:', Object.keys(dailyIntakeLogs).length);
             return;
         }
         
@@ -648,15 +658,25 @@ window.toggleIntakeLog = async function(scheduleId) {
         
         // Save to localStorage for demo mode
         const mockLogs = JSON.parse(localStorage.getItem('mockDailyIntakeLogs') || '{}');
+        console.log('💾 Before save - existing logs:', mockLogs);
+        console.log('💾 Saving with key:', logKey);
+        
         if (newState) {
             mockLogs[logKey] = dailyIntakeLogs[scheduleId];
+            console.log('💾 Added log:', mockLogs[logKey]);
         } else {
             if (mockLogs[logKey]) {
                 mockLogs[logKey].is_taken = false;
                 mockLogs[logKey].taken_at = null;
+                console.log('💾 Updated existing log to false');
+            } else {
+                console.log('💾 No existing log to update');
             }
         }
+        
         localStorage.setItem('mockDailyIntakeLogs', JSON.stringify(mockLogs));
+        console.log('💾 After save - all logs:', mockLogs);
+        console.log('💾 localStorage size:', localStorage.getItem('mockDailyIntakeLogs').length);
         
         console.log(`✅ Intake log updated: ${newState ? 'taken' : 'not taken'}`);
         
