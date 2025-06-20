@@ -37,20 +37,25 @@
     </script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="logo">
-                <h1><span>M</span><span>Y</span> <span>S</span><span>U</span><span>P</span><span>P</span><span class="tilted-p">S</span></h1>
-                <p class="tagline">サプリメントをData Drivenに管理するなら。</p>
+    <header id="main-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h1><span>M</span><span>Y</span> <span>S</span><span>U</span><span>P</span><span>P</span><span class="tilted-p">S</span></h1>
+                    <p class="tagline">サプリメントをData Drivenに管理するなら。</p>
+                </div>
+                <nav class="navigation">
+                    <a href="index.html" class="nav-link">ホーム</a>
+                    <a href="products.html" class="nav-link active">商品一覧</a>
+                    <a href="my-supps.html" class="nav-link">MY SUPPS</a>
+                    <a href="supps-audit.html" class="nav-link">Supps Audit</a>
+                    <div id="user-menu" class="user-menu"></div>
+                </nav>
             </div>
-            <nav>
-                <a href="index.html" class="nav-link">ホーム</a>
-                <a href="products.html" class="nav-link active">商品一覧</a>
-                <a href="my-supps.html" class="nav-link">MY SUPPS</a>
-                <a href="supps-audit.html" class="nav-link">Supps Audit</a>
-                <div id="user-menu" class="user-menu"></div>
-            </nav>
-        </header>
+        </div>
+    </header>
+
+    <div class="container">
 
         <main class="products-page">
             <div class="page-header">
@@ -152,6 +157,7 @@
         </footer>
     </div>
 
+    <script src="js/navigation.js"></script>
     <script src="js/supabase-client.js"></script>
     <script src="js/user-avatar.js"></script>
     <script src="js/dsld-api.js"></script>
