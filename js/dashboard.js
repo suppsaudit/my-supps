@@ -11,9 +11,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Check authentication
         const user = await getCurrentUser();
         if (!user) {
+            console.log('⚠️ No authenticated user, redirecting to auth page');
             window.location.href = 'auth.html?redirect=dashboard';
             return;
         }
+        
+        console.log('✅ User authenticated:', user.email || user.id);
 
         // Set current time period based on actual time
         setCurrentTimePeriod();
@@ -31,22 +34,42 @@ document.addEventListener('DOMContentLoaded', async () => {
             await regenerateAllSchedules();
         }
         
+        // DEBUG: If still no schedules, create test data
+        if (userSchedules.length === 0) {
+            console.log('🔧 DEBUG: Creating test schedule data');
+            await createTestScheduleData();
+        }
+        
         // Update UI
         updateScheduleDisplay();
         updateStats();
         
     } catch (error) {
-        console.error('Dashboard initialization error:', error);
+        console.error('❌ Dashboard initialization error:', error);
+        
+        // Check if it's an auth error
+        if (error.message && error.message.includes('auth')) {
+            console.log('🔀 Authentication error, redirecting to auth page');
+            window.location.href = 'auth.html?redirect=dashboard';
+            return;
+        }
+        
         // Show error state but don't break the page
-        document.getElementById('scheduleContent').innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">⚠️</div>
-                <p class="empty-state-text">データの読み込みに失敗しました</p>
-                <button class="empty-state-action" onclick="location.reload()">
-                    再読み込み
-                </button>
-            </div>
-        `;
+        const scheduleContent = document.getElementById('scheduleContent');
+        if (scheduleContent) {
+            scheduleContent.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">⚠️</div>
+                    <p class="empty-state-text">データの読み込みに失敗しました</p>
+                    <button class="empty-state-action" onclick="location.reload()">
+                        再読み込み
+                    </button>
+                    <small style="margin-top: 10px; color: #666;">
+                        エラー: ${error.message}
+                    </small>
+                </div>
+            `;
+        }
     }
 });
 
@@ -85,6 +108,14 @@ window.switchTimePeriod = function(timeOfDay) {
 async function loadUserSchedules() {
     try {
         const user = await getCurrentUser();
+        
+        if (!user) {
+            console.log('❌ No user found in loadUserSchedules');
+            userSchedules = [];
+            return;
+        }
+        
+        console.log('🔍 Loading schedules for user:', user.id);
         
         // Check if we're in demo mode
         if (window.isDemo || !window.supabase) {
@@ -721,12 +752,17 @@ async function updateStats() {
             totalSupps = mockUserSupps.filter(us => us.user_id === user.id && us.is_my_supps).length;
         } else {
             // Database mode
-            const { count } = await supabase
-                .from('user_supplements')
-                .select('*', { count: 'exact', head: true })
-                .eq('user_id', user.id)
-                .eq('is_my_supps', true);
-            totalSupps = count || 0;
+            if (window.supabase) {
+                const { count } = await supabase
+                    .from('user_supplements')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', user.id)
+                    .eq('is_my_supps', true);
+                totalSupps = count || 0;
+            } else {
+                console.log('⚠️ Supabase not available for stats');
+                totalSupps = 0;
+            }
         }
         
         document.getElementById('totalSupplements').textContent = totalSupps;
@@ -755,4 +791,84 @@ async function updateStats() {
 window.showIntakeHistory = function() {
     // TODO: Implement intake history modal
     alert('過去の摂取ログ機能は近日実装予定です');
+}
+
+// DEBUG: Create test schedule data
+async function createTestScheduleData() {
+    try {
+        const user = await getCurrentUser();
+        if (!user) return;
+        
+        console.log('🔧 Creating test data for debugging...');
+        
+        // Create test supplements
+        const testSupplements = [
+            {
+                id: 'test-vitamin-c',
+                name_ja: 'ビタミンC 1000mg',
+                name_en: 'Vitamin C 1000mg',
+                brand: 'Test Brand',
+                serving_size: '1 tablet'
+            },
+            {
+                id: 'test-vitamin-d',
+                name_ja: 'ビタミンD3 2000IU', 
+                name_en: 'Vitamin D3 2000IU',
+                brand: 'Test Brand',
+                serving_size: '1 capsule'
+            }
+        ];
+        
+        // Save test supplements to localStorage
+        localStorage.setItem('mockSupplements', JSON.stringify(testSupplements));
+        
+        // Create test user supplements
+        const testUserSupps = testSupplements.map(supp => ({
+            user_id: user.id,
+            supplement_id: supp.id,
+            is_my_supps: true,
+            is_selected: false
+        }));
+        
+        localStorage.setItem('mockUserSupplements', JSON.stringify(testUserSupps));
+        
+        // Create test schedules
+        userSchedules = [
+            {
+                id: 'test-schedule-1',
+                user_id: user.id,
+                supplement_id: 'test-vitamin-c',
+                time_of_day: 'morning',
+                timing_type: '朝食後',
+                frequency: '1日2回',
+                supplements: testSupplements[0]
+            },
+            {
+                id: 'test-schedule-2',
+                user_id: user.id,
+                supplement_id: 'test-vitamin-c',
+                time_of_day: 'night',
+                timing_type: '夕食後',
+                frequency: '1日2回',
+                supplements: testSupplements[0]
+            },
+            {
+                id: 'test-schedule-3',
+                user_id: user.id,
+                supplement_id: 'test-vitamin-d',
+                time_of_day: 'morning',
+                timing_type: '朝食後',
+                frequency: '1日1回',
+                supplements: testSupplements[1]
+            }
+        ];
+        
+        // Save test schedules
+        localStorage.setItem('mockUserSchedules', JSON.stringify(userSchedules));
+        
+        console.log('✅ Test data created:', userSchedules.length, 'schedules');
+        
+    } catch (error) {
+        console.error('❌ Error creating test data:', error);
+    }
 }
