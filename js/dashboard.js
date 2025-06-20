@@ -247,14 +247,24 @@ function generateMockSchedules(supplement) {
     
     console.log(`💊 Generating schedule for ${supplement.name_ja || supplement.name_en}: ${dosage}`);
     
+    // Extract serving size info for dosage calculation
+    const servingSizeMatch = (supplement.serving_size || '').match(/(\d+)/);
+    const totalAmount = servingSizeMatch ? parseInt(servingSizeMatch[1]) : 2; // Default 2 if not found
+    
     // Generate schedules based on dosage
     if (dosage.includes('朝晩') || dosage.includes('2回')) {
+        const dosagePerTime = Math.floor(totalAmount / 2);
         schedules.push({
             id: `mock-${supplement.id}-morning`,
             supplement_id: supplement.id,
             time_of_day: 'morning',
             timing_type: '朝食後',
             frequency: dosage,
+            dosage_current: dosagePerTime,
+            dosage_total: totalAmount,
+            dosage_unit: '粒',
+            dosage_position: 1,
+            total_times: 2,
             supplements: {
                 id: supplement.id,
                 name_ja: supplement.name_ja,
@@ -269,6 +279,11 @@ function generateMockSchedules(supplement) {
             time_of_day: 'night',
             timing_type: '夕食後',
             frequency: dosage,
+            dosage_current: dosagePerTime,
+            dosage_total: totalAmount,
+            dosage_unit: '粒',
+            dosage_position: 2,
+            total_times: 2,
             supplements: {
                 id: supplement.id,
                 name_ja: supplement.name_ja,
@@ -278,6 +293,7 @@ function generateMockSchedules(supplement) {
             }
         });
     } else if (dosage.includes('朝昼晩') || dosage.includes('3回')) {
+        const dosagePerTime = Math.floor(totalAmount / 3);
         ['morning', 'day', 'night'].forEach((timeOfDay, index) => {
             const timingTypes = ['朝食後', '昼食後', '夕食後'];
             schedules.push({
@@ -286,6 +302,11 @@ function generateMockSchedules(supplement) {
                 time_of_day: timeOfDay,
                 timing_type: timingTypes[index],
                 frequency: dosage,
+                dosage_current: dosagePerTime,
+                dosage_total: totalAmount,
+                dosage_unit: '粒',
+                dosage_position: index + 1,
+                total_times: 3,
                 supplements: {
                     id: supplement.id,
                     name_ja: supplement.name_ja,
@@ -303,6 +324,11 @@ function generateMockSchedules(supplement) {
             time_of_day: 'morning',
             timing_type: '朝食後',
             frequency: dosage,
+            dosage_current: totalAmount,
+            dosage_total: totalAmount,
+            dosage_unit: '粒',
+            dosage_position: 1,
+            total_times: 1,
             supplements: {
                 id: supplement.id,
                 name_ja: supplement.name_ja,
