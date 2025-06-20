@@ -248,11 +248,22 @@ function generateMockSchedules(supplement) {
         }
     }
     
-    console.log(`💊 Generating schedule for ${supplement.name_ja || supplement.name_en}: ${dosage}`);
-    
     // Extract serving size info for dosage calculation
     const servingSizeMatch = (supplement.serving_size || '').match(/(\d+)/);
-    const totalAmount = servingSizeMatch ? parseInt(servingSizeMatch[1]) : 2; // Default 2 if not found
+    const totalAmount = servingSizeMatch ? parseInt(servingSizeMatch[1]) : 1; // Default 1 if not found
+    
+    // Auto-detect dosage based on serving size if no explicit instructions found
+    if (dosage === '1日1回' && totalAmount >= 2) {
+        if (totalAmount === 2) {
+            dosage = '朝晩2回';
+        } else if (totalAmount === 3) {
+            dosage = '朝昼晩3回';
+        } else if (totalAmount >= 4) {
+            dosage = '朝昼晩3回'; // Cap at 3 times per day
+        }
+    }
+    
+    console.log(`💊 Generating schedule for ${supplement.name_ja || supplement.name_en}: ${dosage} (${totalAmount}粒)`;
     
     // Determine unit from serving_size
     let dosageUnit = '粒';
