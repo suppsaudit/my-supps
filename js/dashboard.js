@@ -152,16 +152,48 @@ async function loadUserSchedules() {
         
         console.log('🔍 Loading schedules for user:', user.id);
         
-        // Check if we're in demo mode
-        if (window.isDemo || !window.supabase) {
-            console.log('📱 Demo mode: Loading schedules from localStorage');
+        // Try database first, fallback to localStorage
+        let loadedFromDatabase = false;
+        
+        if (window.supabase) {
+            try {
+                const { data, error } = await supabase
+                    .from('user_intake_schedules')
+                    .select(`
+                        *,
+                        supplements (
+                            id,
+                            name_ja,
+                            name_en,
+                            brand,
+                            serving_size,
+                            image_url
+                        )
+                    `)
+                    .eq('user_id', user.id);
+
+                if (!error && data) {
+                    console.log('📊 Loaded schedules from database:', data.length);
+                    userSchedules = data;
+                    loadedFromDatabase = true;
+                } else {
+                    console.log('⚠️ Database load failed, using localStorage fallback');
+                }
+            } catch (dbError) {
+                console.log('⚠️ Database error, using localStorage fallback:', dbError.message);
+            }
+        }
+        
+        // Fallback to localStorage if database load failed
+        if (!loadedFromDatabase) {
+            console.log('💾 Loading schedules from localStorage...');
             
             // Load from localStorage if available
             const savedSchedules = JSON.parse(localStorage.getItem('mockUserSchedules') || '[]');
             const mockUserSupps = JSON.parse(localStorage.getItem('mockUserSupplements') || '[]');
             const mockSupplements = JSON.parse(localStorage.getItem('mockSupplements') || '[]');
             
-            console.log('📊 Demo data loaded:', {
+            console.log('📊 LocalStorage data loaded:', {
                 savedSchedules: savedSchedules.length,
                 mockUserSupps: mockUserSupps.length,
                 mockSupplements: mockSupplements.length,
@@ -216,31 +248,39 @@ async function loadUserSchedules() {
                     console.log('💾 Schedules saved to localStorage');
                 }
             }
-                
-            console.log('Demo mode: loaded schedules', userSchedules);
-            return;
+            
+            console.log('💾 localStorage mode: loaded schedules', userSchedules.length);
         }
-        
-        const { data, error } = await supabase
-            .from('user_intake_schedules')
-            .select(`
-                *,
-                supplements (
-                    id,
-                    name_ja,
-                    name_en,
-                    brand,
-                    serving_size,
-                    image_url
-                )
-            `)
-            .eq('user_id', user.id);
-
-        if (error) throw error;
-        userSchedules = data || [];
     } catch (error) {
-        console.error('Error loading schedules:', error);
-        userSchedules = [];
+        console.error('❌ Error loading schedules:', error);
+        console.log('💾 Using localStorage as final fallback...');
+        
+        // Final fallback to localStorage
+        try {
+            const savedSchedules = JSON.parse(localStorage.getItem('mockUserSchedules') || '[]');
+            const mockSupplements = JSON.parse(localStorage.getItem('mockSupplements') || '[]');
+            const user = await getCurrentUser();
+            
+            userSchedules = savedSchedules
+                .filter(s => s.user_id === user.id)
+                .map(schedule => {
+                    const supplement = mockSupplements.find(s => s.id === schedule.supplement_id);
+                    return {
+                        ...schedule,
+                        supplements: supplement || {
+                            id: schedule.supplement_id,
+                            name_ja: 'Unknown Supplement',
+                            name_en: 'Unknown Supplement',
+                            brand: 'Unknown Brand',
+                            serving_size: '1回分'
+                        }
+                    };
+                });
+            console.log('💾 Fallback localStorage schedules loaded:', userSchedules.length);
+        } catch (fallbackError) {
+            console.error('❌ localStorage fallback failed:', fallbackError);
+            userSchedules = [];
+        }
     }
 }
 
@@ -468,8 +508,36 @@ async function loadDailyIntakeLogs() {
         
         console.log('📅 Loading daily intake logs for:', today);
         
-        if (window.isDemo || !window.supabase) {
-            // Demo mode: load from localStorage
+        // Try database first, fallback to localStorage
+        let loadedFromDatabase = false;
+        
+        if (window.supabase) {
+            try {
+                const { data, error } = await supabase
+                    .from('daily_intake_logs')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .eq('taken_date', today);
+
+                if (!error && data) {
+                    console.log('📊 Loaded logs from database:', data.length);
+                    // Convert to object for easy lookup
+                    dailyIntakeLogs = {};
+                    data.forEach(log => {
+                        dailyIntakeLogs[log.schedule_id] = log;
+                    });
+                    loadedFromDatabase = true;
+                } else {
+                    console.log('⚠️ Database load failed, using localStorage fallback');
+                }
+            } catch (dbError) {
+                console.log('⚠️ Database error, using localStorage fallback:', dbError.message);
+            }
+        }
+        
+        // Fallback to localStorage if database load failed
+        if (!loadedFromDatabase) {
+            console.log('💾 Loading daily intake logs from localStorage...');
             const mockLogsRaw = localStorage.getItem('mockDailyIntakeLogs') || '{}';
             console.log('📦 Raw localStorage data:', mockLogsRaw);
             
@@ -477,11 +545,6 @@ async function loadDailyIntakeLogs() {
             console.log('📊 Parsed mock logs:', mockLogs);
             
             dailyIntakeLogs = {};
-            
-            // Check the structure of mockLogs
-            console.log('🔍 mockLogs keys:', Object.keys(mockLogs));
-            console.log('🔍 mockLogs values:', Object.values(mockLogs));
-            console.log('🔍 Today\'s date for comparison:', today);
             
             // Filter logs for today and convert to lookup object
             // The key format is: {scheduleId}-{date}
@@ -497,25 +560,28 @@ async function loadDailyIntakeLogs() {
             
             console.log('📋 Final dailyIntakeLogs:', dailyIntakeLogs);
             console.log('📊 Total logs loaded for today:', Object.keys(dailyIntakeLogs).length);
-            return;
         }
-        
-        const { data, error } = await supabase
-            .from('daily_intake_logs')
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('taken_date', today);
-
-        if (error) throw error;
-        
-        // Convert to object for easy lookup
-        dailyIntakeLogs = {};
-        (data || []).forEach(log => {
-            dailyIntakeLogs[log.schedule_id] = log;
-        });
     } catch (error) {
-        console.error('Error loading intake logs:', error);
-        dailyIntakeLogs = {};
+        console.error('❌ Error loading intake logs:', error);
+        console.log('💾 Using localStorage as final fallback...');
+        
+        // Final fallback to localStorage
+        try {
+            const mockLogsRaw = localStorage.getItem('mockDailyIntakeLogs') || '{}';
+            const mockLogs = JSON.parse(mockLogsRaw);
+            dailyIntakeLogs = {};
+            
+            Object.keys(mockLogs).forEach(logKey => {
+                const log = mockLogs[logKey];
+                if (log && log.taken_date === today && log.is_taken) {
+                    dailyIntakeLogs[log.schedule_id] = log;
+                }
+            });
+            console.log('💾 Fallback localStorage logs loaded:', Object.keys(dailyIntakeLogs).length);
+        } catch (fallbackError) {
+            console.error('❌ localStorage fallback failed:', fallbackError);
+            dailyIntakeLogs = {};
+        }
     }
 }
 
