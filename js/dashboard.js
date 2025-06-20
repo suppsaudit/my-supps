@@ -254,6 +254,17 @@ function generateMockSchedules(supplement) {
     const servingSizeMatch = (supplement.serving_size || '').match(/(\d+)/);
     const totalAmount = servingSizeMatch ? parseInt(servingSizeMatch[1]) : 2; // Default 2 if not found
     
+    // Determine unit from serving_size
+    let dosageUnit = '粒';
+    const servingSize = supplement.serving_size || '';
+    if (servingSize.includes('tablet') || servingSize.includes('錠')) {
+        dosageUnit = '錠';
+    } else if (servingSize.includes('capsule') || servingSize.includes('カプセル')) {
+        dosageUnit = 'カプセル';
+    } else if (servingSize.includes('softgel') || servingSize.includes('ソフトジェル')) {
+        dosageUnit = 'ソフトジェル';
+    }
+    
     // Generate schedules based on dosage
     if (dosage.includes('朝晩') || dosage.includes('2回')) {
         const dosagePerTime = Math.floor(totalAmount / 2);
@@ -265,7 +276,7 @@ function generateMockSchedules(supplement) {
             frequency: dosage,
             dosage_current: dosagePerTime,
             dosage_total: totalAmount,
-            dosage_unit: '粒',
+            dosage_unit: dosageUnit,
             dosage_position: 1,
             total_times: 2,
             supplements: {
@@ -284,7 +295,7 @@ function generateMockSchedules(supplement) {
             frequency: dosage,
             dosage_current: dosagePerTime,
             dosage_total: totalAmount,
-            dosage_unit: '粒',
+            dosage_unit: dosageUnit,
             dosage_position: 2,
             total_times: 2,
             supplements: {
@@ -307,7 +318,7 @@ function generateMockSchedules(supplement) {
                 frequency: dosage,
                 dosage_current: dosagePerTime,
                 dosage_total: totalAmount,
-                dosage_unit: '粒',
+                dosage_unit: dosageUnit,
                 dosage_position: index + 1,
                 total_times: 3,
                 supplements: {
@@ -329,7 +340,7 @@ function generateMockSchedules(supplement) {
             frequency: dosage,
             dosage_current: totalAmount,
             dosage_total: totalAmount,
-            dosage_unit: '粒',
+            dosage_unit: dosageUnit,
             dosage_position: 1,
             total_times: 1,
             supplements: {
@@ -532,19 +543,8 @@ function formatScheduleItem(schedule) {
     const timingDisplay = schedule.timing_type || '指定なし';
     const supplementName = formatSupplementNameForSchedule(schedule.supplements);
     
-    // Debug log to check schedule data
-    console.log('🔍 Schedule data for display:', {
-        id: schedule.id,
-        dosage_current: schedule.dosage_current,
-        dosage_total: schedule.dosage_total,
-        dosage_position: schedule.dosage_position,
-        total_times: schedule.total_times,
-        dosage_unit: schedule.dosage_unit
-    });
-    
     // Format dosage display (e.g., "1/2 粒" for split dosages)
     const dosageDisplay = formatDosageDisplay(schedule);
-    console.log('📊 Formatted dosage display:', dosageDisplay);
     
     return `
         <div class="schedule-item" data-schedule-id="${schedule.id}">
@@ -1185,41 +1185,64 @@ async function createMinimalDemoData() {
         
         console.log('🔧 Creating minimal demo data...');
         
-        // Create one simple test supplement
-        const testSupplement = {
-            id: 'demo-vitamin-c',
-            name_ja: 'ビタミンC 1000mg',
-            name_en: 'Vitamin C 1000mg',
-            brand: 'Demo Brand',
-            serving_size: '1 tablet',
-            nutrients: [
-                { name_ja: 'ビタミンC', amount: 1000, unit: 'mg' }
-            ]
-        };
+        // Create test supplements with proper serving sizes for dosage splitting
+        const testSupplements = [
+            {
+                id: 'demo-vitamin-c',
+                name_ja: 'ビタミンC-1000 徐放性 100錠',
+                name_en: 'Vitamin C 1000mg',
+                brand: 'Nature\'s Way',
+                serving_size: '2 tablets', // This will split into 1 morning + 1 night
+                nutrients: [
+                    { name_ja: 'ビタミンC', amount: 1000, unit: 'mg' }
+                ]
+            },
+            {
+                id: 'demo-buffered-c',
+                name_ja: 'バッファードCコンプレックス 1000mg 120カプセル',
+                name_en: 'Buffered C Complex 1000mg',
+                brand: 'Nature\'s Way',
+                serving_size: '2 capsules', // This will split into 1 morning + 1 night
+                nutrients: [
+                    { name_ja: 'ビタミンC', amount: 1000, unit: 'mg' }
+                ]
+            },
+            {
+                id: 'demo-vitamin-d3',
+                name_ja: 'Extra Strength ビタミンD3 2000 IU',
+                name_en: 'Extra Strength Vitamin D3 2000 IU',
+                brand: 'Kirkland Signature',
+                serving_size: '1 softgel', // This will stay as 1 dose per day
+                nutrients: [
+                    { name_ja: 'ビタミンD3', amount: 2000, unit: 'IU' }
+                ]
+            }
+        ];
         
         // Save to localStorage
-        localStorage.setItem('mockSupplements', JSON.stringify([testSupplement]));
-        localStorage.setItem('mockUserSupplements', JSON.stringify([{
+        localStorage.setItem('mockSupplements', JSON.stringify(testSupplements));
+        
+        const userSupplements = testSupplements.map(supp => ({
             user_id: user.id,
-            supplement_id: testSupplement.id,
+            supplement_id: supp.id,
             is_my_supps: true,
             is_selected: false
-        }]));
+        }));
+        localStorage.setItem('mockUserSupplements', JSON.stringify(userSupplements));
         
-        // Create schedule
-        userSchedules = [{
-            id: 'demo-schedule-1',
-            user_id: user.id,
-            supplement_id: testSupplement.id,
-            time_of_day: 'morning',
-            timing_type: '朝食後',
-            frequency: '1日1回',
-            supplements: testSupplement
-        }];
+        // Generate schedules for all test supplements
+        userSchedules = [];
+        testSupplements.forEach(supplement => {
+            const schedules = generateMockSchedules(supplement);
+            schedules.forEach(schedule => {
+                schedule.user_id = user.id;
+            });
+            userSchedules.push(...schedules);
+        });
         
         localStorage.setItem('mockUserSchedules', JSON.stringify(userSchedules));
         
-        console.log('✅ Minimal demo data created with 1 supplement');
+        console.log(`✅ Minimal demo data created with ${testSupplements.length} supplements and ${userSchedules.length} schedules`);
         
     } catch (error) {
         console.error('❌ Error creating minimal demo data:', error);
