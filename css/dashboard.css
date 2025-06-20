@@ -210,6 +210,78 @@
     font-weight: 500;
 }
 
+.dosage-display {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+/* Desktop Schedule Grid */
+.schedule-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.schedule-column {
+    background: var(--background-light);
+    border-radius: var(--radius);
+    padding: 1rem;
+}
+
+.column-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border-light);
+}
+
+.column-content {
+    min-height: 150px;
+}
+
+/* Responsive Classes */
+.mobile-only {
+    display: block;
+}
+
+.desktop-only {
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .mobile-only {
+        display: none;
+    }
+    
+    .desktop-only {
+        display: grid;
+    }
+    
+    .time-tabs {
+        display: none;
+    }
+}
+
+/* Desktop grid item adjustments */
+.schedule-grid .schedule-item {
+    margin-bottom: 0.5rem;
+}
+
+.schedule-grid .schedule-item:last-child {
+    margin-bottom: 0;
+}
+
+.schedule-grid .supplement-name {
+    font-size: 0.875rem;
+}
+
+.schedule-grid .supplement-timing {
+    font-size: 0.75rem;
+}
+
 /* Toggle Switch */
 .intake-toggle {
     position: relative;
@@ -372,8 +444,25 @@
     box-shadow: 0 4px 12px rgba(255, 20, 147, 0.4);
 }
 
+/* Small empty state for desktop columns */
+.empty-state-small {
+    text-align: center;
+    padding: 1.5rem;
+    color: var(--text-secondary);
+}
+
+.empty-state-small .empty-state-text {
+    font-size: 0.875rem;
+    margin: 0;
+    opacity: 0.7;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
+    .schedule-grid {
+        display: none;
+    }
+    
     .score-card {
         grid-template-columns: 1fr;
     }

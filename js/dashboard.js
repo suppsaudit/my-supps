@@ -44,6 +44,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateScheduleDisplay();
         updateStats();
         
+        // Handle window resize
+        window.addEventListener('resize', debounce(() => {
+            updateScheduleDisplay();
+        }, 250));
+        
     } catch (error) {
         console.error('❌ Dashboard initialization error:', error);
         
@@ -420,6 +425,18 @@ async function loadDailyIntakeLogs() {
 
 // Update schedule display
 function updateScheduleDisplay() {
+    // Check if we're on desktop or mobile
+    const isDesktop = window.innerWidth >= 768;
+    
+    if (isDesktop) {
+        updateDesktopScheduleDisplay();
+    } else {
+        updateMobileScheduleDisplay();
+    }
+}
+
+// Update mobile schedule display (tab-based)
+function updateMobileScheduleDisplay() {
     const scheduleContent = document.getElementById('scheduleContent');
     
     if (!scheduleContent) {
@@ -427,7 +444,7 @@ function updateScheduleDisplay() {
         return;
     }
     
-    console.log('Updating schedule display for time:', currentTimeOfDay);
+    console.log('Updating mobile schedule display for time:', currentTimeOfDay);
     console.log('All schedules:', userSchedules);
     
     const schedulesForTime = userSchedules.filter(s => s.time_of_day === currentTimeOfDay);
@@ -455,32 +472,57 @@ function updateScheduleDisplay() {
         return;
     }
     
-    scheduleContent.innerHTML = schedulesForTime.map(schedule => {
-        const isChecked = dailyIntakeLogs[schedule.id]?.is_taken || false;
-        const timingDisplay = schedule.timing_type || '指定なし';
-        const supplementName = formatSupplementNameForSchedule(schedule.supplements);
+    scheduleContent.innerHTML = schedulesForTime.map(schedule => formatScheduleItem(schedule)).join('');
+}
+
+// Update desktop schedule display (3-column grid)
+function updateDesktopScheduleDisplay() {
+    const timeSlots = ['morning', 'day', 'night'];
+    
+    timeSlots.forEach(timeSlot => {
+        const columnContent = document.getElementById(`${timeSlot}Schedule`);
+        if (!columnContent) return;
         
-        // Format dosage display (e.g., "1/2 粒" for split dosages)
-        const dosageDisplay = formatDosageDisplay(schedule);
+        const schedulesForTime = userSchedules.filter(s => s.time_of_day === timeSlot);
         
-        return `
-            <div class="schedule-item" data-schedule-id="${schedule.id}">
-                <div class="supplement-info">
-                    <div class="supplement-name">${supplementName}</div>
-                    <div class="supplement-timing">
-                        <span class="timing-badge">${timingDisplay}</span>
-                        <span class="dosage-display">${dosageDisplay}</span>
-                    </div>
+        if (schedulesForTime.length === 0) {
+            columnContent.innerHTML = `
+                <div class="empty-state-small">
+                    <p class="empty-state-text">なし</p>
                 </div>
-                <label class="intake-toggle">
-                    <input type="checkbox" class="toggle-input" 
-                           ${isChecked ? 'checked' : ''} 
-                           onchange="toggleIntake('${schedule.id}', this.checked)">
-                    <span class="toggle-slider"></span>
-                </label>
+            `;
+        } else {
+            columnContent.innerHTML = schedulesForTime.map(schedule => formatScheduleItem(schedule)).join('');
+        }
+    });
+}
+
+// Format a single schedule item
+function formatScheduleItem(schedule) {
+    const isChecked = dailyIntakeLogs[schedule.id]?.is_taken || false;
+    const timingDisplay = schedule.timing_type || '指定なし';
+    const supplementName = formatSupplementNameForSchedule(schedule.supplements);
+    
+    // Format dosage display (e.g., "1/2 粒" for split dosages)
+    const dosageDisplay = formatDosageDisplay(schedule);
+    
+    return `
+        <div class="schedule-item" data-schedule-id="${schedule.id}">
+            <div class="supplement-info">
+                <div class="supplement-name">${supplementName}</div>
+                <div class="supplement-timing">
+                    <span class="timing-badge">${timingDisplay}</span>
+                    <span class="dosage-display">${dosageDisplay}</span>
+                </div>
             </div>
-        `;
-    }).join('');
+            <label class="intake-toggle">
+                <input type="checkbox" class="toggle-input" 
+                       ${isChecked ? 'checked' : ''} 
+                       onchange="toggleIntake('${schedule.id}', this.checked)">
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+    `;
 }
 
 // Toggle intake status

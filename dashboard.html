@@ -76,8 +76,8 @@
                     <p class="section-subtitle">本日の摂取スケジュール</p>
                 </div>
 
-                <!-- Time Period Tabs -->
-                <div class="time-tabs">
+                <!-- Time Period Tabs (Mobile) -->
+                <div class="time-tabs mobile-only">
                     <button class="time-tab active" data-time="morning" onclick="switchTimePeriod('morning')">
                         Morning
                     </button>
@@ -89,11 +89,39 @@
                     </button>
                 </div>
 
-                <!-- Schedule Items -->
-                <div class="schedule-content" id="scheduleContent">
+                <!-- Schedule Items (Mobile) -->
+                <div class="schedule-content mobile-only" id="scheduleContent">
                     <div class="loading-spinner">
                         <div class="spinner"></div>
                         <p>スケジュールを読み込み中...</p>
+                    </div>
+                </div>
+
+                <!-- Schedule Grid (Desktop) -->
+                <div class="schedule-grid desktop-only" id="scheduleGrid">
+                    <div class="schedule-column" data-time="morning">
+                        <h3 class="column-title">Morning</h3>
+                        <div class="column-content" id="morningSchedule">
+                            <div class="loading-spinner">
+                                <div class="spinner"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="schedule-column" data-time="day">
+                        <h3 class="column-title">Afternoon</h3>
+                        <div class="column-content" id="daySchedule">
+                            <div class="loading-spinner">
+                                <div class="spinner"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="schedule-column" data-time="night">
+                        <h3 class="column-title">Night</h3>
+                        <div class="column-content" id="nightSchedule">
+                            <div class="loading-spinner">
+                                <div class="spinner"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

@@ -669,6 +669,30 @@ ALTER TABLE user_intake_schedules ADD COLUMN dosage_position INTEGER;
 ALTER TABLE user_intake_schedules ADD COLUMN total_times INTEGER;
 ```
 
+### 6. PC版TODAY'S SCHEDULEの3カラム表示実装
+**問題:** PC版でも朝昼晩をタブで切り替える必要があり不便
+**要求:** PC版では朝昼晩を横に並べて一度に表示
+
+**実装内容:**
+1. **レスポンシブデザイン** (`dashboard.html`)
+   - `.mobile-only`: モバイル版のタブ切り替えUI
+   - `.desktop-only`: PC版の3カラムグリッドUI
+   - `<div class="schedule-grid">`: Morning/Afternoon/Nightの3カラム構成
+
+2. **表示切り替えロジック** (`js/dashboard.js`)
+   - `updateDesktopScheduleDisplay()`: PC版用の3カラム表示更新
+   - `updateMobileScheduleDisplay()`: モバイル版用のタブ表示更新
+   - `window.innerWidth >= 768px`でPC/モバイル判定
+
+3. **スタイル定義** (`css/dashboard.css`)
+   - `.schedule-grid`: 3カラムグリッドレイアウト
+   - `.schedule-column`: 各時間帯のカラムスタイル
+   - `@media (min-width: 768px)`: PC版の表示切り替え
+
+**表示例:**
+- **PC版**: Morning | Afternoon | Night を横並び表示
+- **モバイル版**: タブ切り替えで各時間帯を表示
+
 ## Resolved Issues & Solutions (2025-06-17)
 
 ### 1. MY SUPPS追加機能の完全修復

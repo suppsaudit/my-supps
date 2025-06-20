@@ -56,3 +56,16 @@ function formatDosageDisplay(schedule) {
     const servingSize = schedule.supplements?.serving_size || '1粒';
     return servingSize;
 }
+
+// Debounce function for window resize
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
