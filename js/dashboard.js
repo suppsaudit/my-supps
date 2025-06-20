@@ -4,6 +4,7 @@ let currentTimeOfDay = 'morning';
 let userSchedules = [];
 let currentScoreChart = null;
 let dailyIntakeLogs = {};
+let savedCheckboxStates = {};
 
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', async () => {
@@ -44,9 +45,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateScheduleDisplay();
         updateStats();
         
-        // Handle window resize
+        // Handle window resize - preserve checkbox states
         window.addEventListener('resize', debounce(() => {
+            preserveCheckboxStates();
             updateScheduleDisplay();
+            restoreCheckboxStates();
         }, 250));
         
     } catch (error) {
@@ -559,6 +562,13 @@ window.toggleIntake = async function(scheduleId, isChecked) {
         
         console.log('🔄 Toggling intake:', { scheduleId, isChecked, today });
         
+        // Prevent multiple rapid toggles
+        if (window.toggleInProgress) {
+            console.log('⚠️ Toggle already in progress, ignoring');
+            return;
+        }
+        window.toggleInProgress = true;
+        
         if (window.isDemo || !window.supabase) {
             // Demo mode: save to localStorage
             const mockLogs = JSON.parse(localStorage.getItem('mockDailyIntakeLogs') || '{}');
@@ -628,11 +638,18 @@ window.toggleIntake = async function(scheduleId, isChecked) {
             }
         }
         
-        // Update chart and stats
+        // Update chart and stats WITHOUT refreshing schedule display
         updateCurrentScoreChart();
         updateStats();
         
-        console.log('✅ Successfully toggled intake status');
+        // Force checkbox to maintain correct state
+        const checkbox = document.querySelector(`input[onchange="toggleIntake('${scheduleId}', this.checked)"]`);
+        if (checkbox && checkbox.checked !== isChecked) {
+            checkbox.checked = isChecked;
+        }
+        
+        console.log('✅ Successfully toggled intake status', { scheduleId, finalState: isChecked });
+        window.toggleInProgress = false;
         
     } catch (error) {
         console.error('❌ Error toggling intake:', error);
@@ -641,8 +658,32 @@ window.toggleIntake = async function(scheduleId, isChecked) {
         if (checkbox) {
             checkbox.checked = !isChecked;
         }
+        window.toggleInProgress = false;
     }
 };
+
+// Preserve checkbox states before UI update
+function preserveCheckboxStates() {
+    savedCheckboxStates = {};
+    document.querySelectorAll('.toggle-input').forEach(checkbox => {
+        const scheduleId = checkbox.getAttribute('onchange').match(/'([^']+)'/)[1];
+        savedCheckboxStates[scheduleId] = checkbox.checked;
+    });
+    console.log('💾 Preserved checkbox states:', savedCheckboxStates);
+}
+
+// Restore checkbox states after UI update  
+function restoreCheckboxStates() {
+    setTimeout(() => {
+        Object.keys(savedCheckboxStates).forEach(scheduleId => {
+            const checkbox = document.querySelector(`input[onchange="toggleIntake('${scheduleId}', this.checked)"]`);
+            if (checkbox) {
+                checkbox.checked = savedCheckboxStates[scheduleId];
+            }
+        });
+        console.log('🔄 Restored checkbox states');
+    }, 100);
+}
 
 // Initialize Current Score Chart
 function initializeCurrentScoreChart() {
@@ -1270,4 +1311,97 @@ async function createTestScheduleData() {
     } catch (error) {
         console.error('❌ Error creating test data:', error);
     }
+}
+
+// Toggle intake log for schedule
+async function toggleIntakeLog(scheduleId) {
+    try {
+        // Prevent rapid clicking
+        if (window.toggleInProgress) {
+            console.log('⏳ Toggle already in progress, skipping...');
+            return;
+        }
+        
+        window.toggleInProgress = true;
+        
+        const today = new Date().toISOString().split('T')[0];
+        const logKey = `${scheduleId}-${today}`;
+        
+        // Toggle the state
+        const currentState = dailyIntakeLogs[logKey] || { is_taken: false };
+        const newState = !currentState.is_taken;
+        
+        console.log(`🔄 Toggling intake log for schedule ${scheduleId}: ${currentState.is_taken} → ${newState}`);
+        
+        // Update local state immediately
+        dailyIntakeLogs[logKey] = {
+            schedule_id: scheduleId,
+            taken_date: today,
+            is_taken: newState,
+            taken_at: newState ? new Date().toISOString() : null
+        };
+        
+        // Save to localStorage
+        localStorage.setItem('mockDailyIntakeLogs', JSON.stringify(dailyIntakeLogs));
+        
+        // Update the checkbox visually
+        const checkbox = document.querySelector(`input[data-schedule-id="${scheduleId}"]`);
+        if (checkbox) {
+            checkbox.checked = newState;
+        }
+        
+        console.log(`✅ Intake log updated: ${newState ? 'taken' : 'not taken'}`);
+        
+        // Update the Current Score chart
+        updateCurrentScoreChart();
+        
+        // Add a short delay to prevent rapid toggling
+        setTimeout(() => {
+            window.toggleInProgress = false;
+        }, 300);
+        
+    } catch (error) {
+        console.error('❌ Error toggling intake log:', error);
+        window.toggleInProgress = false;
+    }
+}
+
+// Preserve checkbox states during UI updates
+function preserveCheckboxStates() {
+    const checkboxes = document.querySelectorAll('input[type="checkbox"][data-schedule-id]');
+    savedCheckboxStates = {};
+    
+    checkboxes.forEach(checkbox => {
+        const scheduleId = checkbox.dataset.scheduleId;
+        if (scheduleId) {
+            savedCheckboxStates[scheduleId] = checkbox.checked;
+        }
+    });
+    
+    console.log('📋 Preserved checkbox states:', Object.keys(savedCheckboxStates).length);
+}
+
+// Restore checkbox states after UI updates
+function restoreCheckboxStates() {
+    Object.keys(savedCheckboxStates).forEach(scheduleId => {
+        const checkbox = document.querySelector(`input[data-schedule-id="${scheduleId}"]`);
+        if (checkbox) {
+            checkbox.checked = savedCheckboxStates[scheduleId];
+        }
+    });
+    
+    console.log('🔄 Restored checkbox states:', Object.keys(savedCheckboxStates).length);
+}
+
+// Debounce function for resize events
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
 }
