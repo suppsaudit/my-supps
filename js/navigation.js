@@ -1,129 +1,52 @@
-// Dynamic Navigation Bar
-// Collapses header when scrolling down, expands when scrolling up
+// Static Navigation Bar - No Dynamic Behavior
+// Fixed navigation to prevent flickering and clicking issues
 
-class DynamicNavigation {
+class StaticNavigation {
     constructor() {
         this.header = document.getElementById('main-header');
         
         if (!this.header) {
-            console.error('❌ Dynamic Navigation: Header element not found!');
+            console.error('❌ Navigation: Header element not found!');
             return;
         }
         
-        // console.log('✅ Dynamic Navigation: Initializing...');
-        
-        this.lastScrollY = window.scrollY;
-        this.scrollThreshold = 50; // Reduced threshold for quicker response
-        this.isCollapsed = false;
-        
+        console.log('✅ Static Navigation: Initialized');
         this.init();
     }
     
     init() {
-        // Add scroll event listener with throttling
-        let ticking = false;
+        // Remove any existing collapsed class
+        this.header.classList.remove('collapsed');
         
-        // Try both window and document scroll events
-        const scrollHandler = () => {
-            if (!ticking) {
-                requestAnimationFrame(() => {
-                    this.handleScroll();
-                    ticking = false;
-                });
-                ticking = true;
-            }
-        };
+        // Ensure header is always visible and clickable
+        this.header.style.position = 'sticky';
+        this.header.style.top = '0';
+        this.header.style.zIndex = '9999';
+        this.header.style.transition = 'none';
         
-        // Use only window scroll event to avoid duplicate handlers
-        window.addEventListener('scroll', scrollHandler, { passive: true });
+        // Make sure navigation links are always clickable
+        const navLinks = this.header.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            link.style.pointerEvents = 'auto';
+            link.style.cursor = 'pointer';
+        });
         
-        // Removed container scroll listener to avoid conflicts
-        
-        // Initialize state
-        this.handleScroll();
-    }
-    
-    handleScroll() {
-        const currentScrollY = window.scrollY;
-        const scrollDifference = currentScrollY - this.lastScrollY;
-        
-        // Only trigger changes if scroll is significant enough
-        if (Math.abs(scrollDifference) < 5) {
-            return;
-        }
-        
-        // Debounce mechanism to prevent rapid state changes
-        if (this.scrollTimeout) {
-            clearTimeout(this.scrollTimeout);
-        }
-        
-        this.scrollTimeout = setTimeout(() => {
-            // console.log('🔍 Scroll:', { currentScrollY, scrollDifference, isCollapsed: this.isCollapsed });
-            
-            // Check if we're at the top of the page
-            if (currentScrollY <= this.scrollThreshold) {
-                this.expandHeader();
-            }
-            // Scrolling down
-            else if (scrollDifference > 0 && currentScrollY > this.scrollThreshold) {
-                this.collapseHeader();
-            }
-            // Scrolling up
-            else if (scrollDifference < 0) {
-                this.expandHeader();
-            }
-            
-            this.lastScrollY = currentScrollY;
-        }, 50); // 50ms debounce
-    }
-    
-    collapseHeader() {
-        if (!this.isCollapsed) {
-            // console.log('📱 Collapsing header');
-            this.header.classList.add('collapsed');
-            this.isCollapsed = true;
-        }
-    }
-    
-    expandHeader() {
-        if (this.isCollapsed) {
-            // console.log('📱 Expanding header');
-            this.header.classList.remove('collapsed');
-            this.isCollapsed = false;
-        }
+        console.log('✅ Navigation: Static mode enabled, no scroll behavior');
     }
 }
 
-// Initialize immediately when script loads, not waiting for DOMContentLoaded
+// Initialize static navigation immediately
 (function initNavigation() {
-    // Check if DOM is already loaded
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', setupNavigation);
+        document.addEventListener('DOMContentLoaded', () => {
+            new StaticNavigation();
+        });
     } else {
-        // DOM is already loaded, initialize immediately
-        setupNavigation();
-    }
-    
-    function setupNavigation() {
-        // console.log('🚀 Setting up Dynamic Navigation...');
-        const nav = new DynamicNavigation();
-        
-        // Store navigation instance globally for debugging
-        window._dynamicNav = nav;
-        
-        // Remove test button for production
-        // Uncomment below to add test button
-        /*
-        const testBtn = document.createElement('button');
-        testBtn.textContent = 'Test Collapse';
-        testBtn.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 9999; background: #ff1493; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;';
-        testBtn.onclick = () => {
-            if (nav.header) {
-                nav.header.classList.toggle('collapsed');
-                console.log('🧪 Test toggle:', nav.header.classList.contains('collapsed'));
-            }
-        };
-        document.body.appendChild(testBtn);
-        */
+        new StaticNavigation();
     }
 })();
+
+// Export for use in other modules
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = StaticNavigation;
+}

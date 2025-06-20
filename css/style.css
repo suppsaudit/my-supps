@@ -71,7 +71,9 @@ header {
     backface-visibility: hidden; /* Prevent flickering */
 }
 
-/* Header states */
+/* Header states - DISABLED FOR STABILITY */
+/* All collapsed rules commented out to prevent flickering */
+/*
 header.collapsed {
     padding: 0.5rem 0 !important;
     height: 60px !important;
@@ -90,6 +92,7 @@ header.collapsed .navigation {
 header.collapsed .logo h1 {
     font-size: 1.5rem !important;
 }
+*/
 
 .header-content {
     transition: all 0.3s ease;
@@ -751,7 +754,8 @@ footer {
         animation-duration: 28s;
     }
     
-    /* Mobile navigation adjustments */
+    /* Mobile navigation adjustments - DISABLED */
+    /*
     header.collapsed {
         padding: 0.25rem 0;
         height: 50px;
@@ -760,6 +764,7 @@ footer {
     header.collapsed .logo h1 {
         font-size: 1.25rem;
     }
+    */
     
     .navigation {
         gap: 1rem;
