@@ -290,7 +290,7 @@ function generateMockSchedules(supplement) {
         }
     }
     
-    console.log(`💊 Generating schedule for ${supplement.name_ja || supplement.name_en}: ${dosage} (${totalAmount}粒)`;
+    console.log(`💊 Generating schedule for ${supplement.name_ja || supplement.name_en}: ${dosage} (${totalAmount}粒)`);
     
     // Determine unit from serving_size
     let dosageUnit = '粒';
