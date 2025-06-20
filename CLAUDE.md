@@ -693,6 +693,26 @@ ALTER TABLE user_intake_schedules ADD COLUMN total_times INTEGER;
 - **PC版**: Morning | Afternoon | Night を横並び表示
 - **モバイル版**: タブ切り替えで各時間帯を表示
 
+### 7. ナビゲーションのチラつき・クリック不能問題の解決
+**問題:** グローバルナビゲーションがチラつき、まともにクリックできない状態
+**症状:** 「Supps Audit」「マイページ」「摂取履歴」が薄いグレーで表示
+
+**実装内容:**
+1. **DynamicNavigation完全無効化** (`js/navigation.js`)
+   - スクロール連動アニメーションを削除
+   - StaticNavigationクラスに変更
+   - 固定表示、常時クリック可能に設定
+
+2. **CSS強制修正** (`css/style.css`)
+   - `.nav-link`に`!important`でクリック可能性を強制
+   - `pointer-events: auto !important`
+   - `opacity: 1 !important`、`visibility: visible !important`
+
+3. **商品名表示の修正** (`js/my-supps.js`)
+   - `formatSupplementName()`関数追加
+   - スクリーンショット商品名に対応
+   - 「ビタミンC-1000 徐放性 100錠」→「Nature's Way ビタミンC 1,000mg 徐放性 100錠」
+
 ## Resolved Issues & Solutions (2025-06-17)
 
 ### 1. MY SUPPS追加機能の完全修復
