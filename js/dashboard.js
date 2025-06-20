@@ -9,6 +9,8 @@ let savedCheckboxStates = {};
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', async () => {
     try {
+        console.log('🚀 Dashboard initialization started');
+        
         // Check authentication
         const user = await getCurrentUser();
         if (!user) {
@@ -20,30 +22,42 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('✅ User authenticated:', user.email || user.id);
 
         // Set current time period based on actual time
+        console.log('⏰ Setting current time period...');
         setCurrentTimePeriod();
         
         // Initialize charts first
+        console.log('📊 Initializing charts...');
         initializeCurrentScoreChart();
         
         // Load user data
+        console.log('📝 Loading user schedules...');
         await loadUserSchedules();
+        console.log('📋 Loading daily intake logs...');
         await loadDailyIntakeLogs();
+        
+        console.log(`📊 Loaded ${userSchedules.length} schedules`);
         
         // If no schedules found but user has supplements, regenerate schedules
         if (userSchedules.length === 0) {
             console.log('🔄 No schedules found, attempting to regenerate...');
             await regenerateAllSchedules();
+            console.log(`🔄 After regeneration: ${userSchedules.length} schedules`);
         }
         
         // If still no schedules, generate from My Supps data or create minimal test data
         if (userSchedules.length === 0) {
             console.log('🔧 No schedules found, checking My Supps data...');
             await generateSchedulesFromMySupps();
+            console.log(`🔧 After My Supps generation: ${userSchedules.length} schedules`);
         }
         
         // Update UI
+        console.log('🎨 Updating schedule display...');
         updateScheduleDisplay();
+        console.log('📈 Updating stats...');
         updateStats();
+        
+        console.log('✅ Dashboard initialization completed');
         
         // Handle window resize - preserve checkbox states
         window.addEventListener('resize', debounce(() => {
@@ -54,6 +68,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         
     } catch (error) {
         console.error('❌ Dashboard initialization error:', error);
+        console.error('❌ Error stack:', error.stack);
         
         // Check if it's an auth error
         if (error.message && error.message.includes('auth')) {
@@ -75,6 +90,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <small style="margin-top: 10px; color: #666;">
                         エラー: ${error.message}
                     </small>
+                </div>
+            `;
+        }
+        
+        // Also check if schedule grid exists for desktop
+        const scheduleGrid = document.getElementById('scheduleGrid');
+        if (scheduleGrid) {
+            scheduleGrid.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">⚠️</div>
+                    <p class="empty-state-text">エラーが発生しました</p>
+                    <small>${error.message}</small>
                 </div>
             `;
         }
