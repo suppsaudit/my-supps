@@ -596,117 +596,81 @@ function formatScheduleItem(schedule) {
             <label class="intake-toggle">
                 <input type="checkbox" class="toggle-input" 
                        ${isChecked ? 'checked' : ''} 
-                       onchange="toggleIntake('${schedule.id}', this.checked)">
+                       data-schedule-id="${schedule.id}"
+                       onchange="toggleIntakeLog('${schedule.id}')">
                 <span class="toggle-slider"></span>
             </label>
         </div>
     `;
 }
 
-// Toggle intake status
-window.toggleIntake = async function(scheduleId, isChecked) {
+// Toggle intake status (main function)
+window.toggleIntakeLog = async function(scheduleId) {
     try {
-        const user = await getCurrentUser();
-        const today = new Date().toISOString().split('T')[0];
-        
-        console.log('🔄 Toggling intake:', { scheduleId, isChecked, today });
-        
-        // Prevent multiple rapid toggles
+        // Prevent rapid clicking
         if (window.toggleInProgress) {
-            console.log('⚠️ Toggle already in progress, ignoring');
+            console.log('⏳ Toggle already in progress, skipping...');
             return;
         }
+        
         window.toggleInProgress = true;
         
-        if (window.isDemo || !window.supabase) {
-            // Demo mode: save to localStorage
-            const mockLogs = JSON.parse(localStorage.getItem('mockDailyIntakeLogs') || '{}');
-            const logKey = `${scheduleId}-${today}`;
-            
-            if (isChecked) {
-                mockLogs[logKey] = {
-                    schedule_id: scheduleId,
-                    taken_date: today,
-                    is_taken: true,
-                    taken_at: new Date().toISOString()
-                };
-                dailyIntakeLogs[scheduleId] = mockLogs[logKey];
-            } else {
-                if (mockLogs[logKey]) {
-                    mockLogs[logKey].is_taken = false;
-                    mockLogs[logKey].taken_at = null;
-                }
-                if (dailyIntakeLogs[scheduleId]) {
-                    dailyIntakeLogs[scheduleId].is_taken = false;
-                    dailyIntakeLogs[scheduleId].taken_at = null;
-                }
-            }
-            
-            localStorage.setItem('mockDailyIntakeLogs', JSON.stringify(mockLogs));
-            console.log('💾 Saved to localStorage:', mockLogs);
+        const today = new Date().toISOString().split('T')[0];
+        const logKey = `${scheduleId}-${today}`;
+        
+        // Get checkbox element
+        const checkbox = document.querySelector(`input[data-schedule-id="${scheduleId}"]`);
+        if (!checkbox) {
+            console.error('❌ Checkbox not found for schedule:', scheduleId);
+            window.toggleInProgress = false;
+            return;
+        }
+        
+        // Get current state from checkbox
+        const newState = checkbox.checked;
+        
+        console.log(`🔄 Toggling intake log for schedule ${scheduleId}: → ${newState}`);
+        
+        // Update local state immediately
+        if (newState) {
+            dailyIntakeLogs[scheduleId] = {
+                schedule_id: scheduleId,
+                taken_date: today,
+                is_taken: true,
+                taken_at: new Date().toISOString()
+            };
         } else {
-            // Database mode
-            if (isChecked) {
-                // Create or update intake log
-                const { error } = await supabase
-                    .from('daily_intake_logs')
-                    .upsert({
-                        user_id: user.id,
-                        schedule_id: scheduleId,
-                        taken_date: today,
-                        is_taken: true,
-                        taken_at: new Date().toISOString()
-                    }, {
-                        onConflict: 'user_id,schedule_id,taken_date'
-                    });
-                    
-                if (error) throw error;
-                
-                // Update local data
-                dailyIntakeLogs[scheduleId] = {
-                    schedule_id: scheduleId,
-                    is_taken: true,
-                    taken_at: new Date().toISOString()
-                };
-            } else {
-                // Update to not taken
-                const { error } = await supabase
-                    .from('daily_intake_logs')
-                    .update({ is_taken: false, taken_at: null })
-                    .eq('user_id', user.id)
-                    .eq('schedule_id', scheduleId)
-                    .eq('taken_date', today);
-                    
-                if (error) throw error;
-                
-                // Update local data
-                if (dailyIntakeLogs[scheduleId]) {
-                    dailyIntakeLogs[scheduleId].is_taken = false;
-                    dailyIntakeLogs[scheduleId].taken_at = null;
-                }
+            if (dailyIntakeLogs[scheduleId]) {
+                dailyIntakeLogs[scheduleId].is_taken = false;
+                dailyIntakeLogs[scheduleId].taken_at = null;
             }
         }
         
-        // Update chart and stats WITHOUT refreshing schedule display
+        // Save to localStorage for demo mode
+        const mockLogs = JSON.parse(localStorage.getItem('mockDailyIntakeLogs') || '{}');
+        if (newState) {
+            mockLogs[logKey] = dailyIntakeLogs[scheduleId];
+        } else {
+            if (mockLogs[logKey]) {
+                mockLogs[logKey].is_taken = false;
+                mockLogs[logKey].taken_at = null;
+            }
+        }
+        localStorage.setItem('mockDailyIntakeLogs', JSON.stringify(mockLogs));
+        
+        console.log(`✅ Intake log updated: ${newState ? 'taken' : 'not taken'}`);
+        
+        // Update the Current Score chart without refreshing UI
         updateCurrentScoreChart();
         updateStats();
         
-        // Force checkbox to maintain correct state
-        const checkbox = document.querySelector(`input[onchange="toggleIntake('${scheduleId}', this.checked)"]`);
-        if (checkbox && checkbox.checked !== isChecked) {
-            checkbox.checked = isChecked;
-        }
-        
-        console.log('✅ Successfully toggled intake status', { scheduleId, finalState: isChecked });
-        window.toggleInProgress = false;
+        // Add a short delay to prevent rapid toggling
+        setTimeout(() => {
+            window.toggleInProgress = false;
+        }, 300);
         
     } catch (error) {
-        console.error('❌ Error toggling intake:', error);
-        // Revert checkbox state on error
-        const checkbox = document.querySelector(`input[onchange="toggleIntake('${scheduleId}', this.checked)"]`);
-        if (checkbox) {
-            checkbox.checked = !isChecked;
-        }
+        console.error('❌ Error toggling intake log:', error);
         window.toggleInProgress = false;
     }
 };
@@ -1385,58 +1349,6 @@ async function createTestScheduleData() {
     }
 }
 
-// Toggle intake log for schedule
-async function toggleIntakeLog(scheduleId) {
-    try {
-        // Prevent rapid clicking
-        if (window.toggleInProgress) {
-            console.log('⏳ Toggle already in progress, skipping...');
-            return;
-        }
-        
-        window.toggleInProgress = true;
-        
-        const today = new Date().toISOString().split('T')[0];
-        const logKey = `${scheduleId}-${today}`;
-        
-        // Toggle the state
-        const currentState = dailyIntakeLogs[logKey] || { is_taken: false };
-        const newState = !currentState.is_taken;
-        
-        console.log(`🔄 Toggling intake log for schedule ${scheduleId}: ${currentState.is_taken} → ${newState}`);
-        
-        // Update local state immediately
-        dailyIntakeLogs[logKey] = {
-            schedule_id: scheduleId,
-            taken_date: today,
-            is_taken: newState,
-            taken_at: newState ? new Date().toISOString() : null
-        };
-        
-        // Save to localStorage
-        localStorage.setItem('mockDailyIntakeLogs', JSON.stringify(dailyIntakeLogs));
-        
-        // Update the checkbox visually
-        const checkbox = document.querySelector(`input[data-schedule-id="${scheduleId}"]`);
-        if (checkbox) {
-            checkbox.checked = newState;
-        }
-        
-        console.log(`✅ Intake log updated: ${newState ? 'taken' : 'not taken'}`);
-        
-        // Update the Current Score chart
-        updateCurrentScoreChart();
-        
-        // Add a short delay to prevent rapid toggling
-        setTimeout(() => {
-            window.toggleInProgress = false;
-        }, 300);
-        
-    } catch (error) {
-        console.error('❌ Error toggling intake log:', error);
-        window.toggleInProgress = false;
-    }
-}
 
 // Preserve checkbox states during UI updates
 function preserveCheckboxStates() {
