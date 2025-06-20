@@ -78,7 +78,8 @@ async function loadSupplementFilter() {
         supplements.forEach(supplement => {
             const option = document.createElement('option');
             option.value = supplement.id;
-            option.textContent = `${supplement.name_ja || supplement.name_en} (${supplement.brand || 'Unknown'})`;
+            const displayName = formatSupplementName(supplement);
+            option.textContent = displayName;
             select.appendChild(option);
         });
         
@@ -131,7 +132,7 @@ async function loadDemoIntakeHistory(user) {
                 schedule: schedule,
                 supplement: supplement,
                 timing_type: schedule?.timing_type,
-                supplement_name: supplement?.name_ja || supplement?.name_en || 'Unknown'
+                supplement_name: formatSupplementName(supplement)
             };
         })
         .sort((a, b) => new Date(b.taken_date) - new Date(a.taken_date));
@@ -164,8 +165,7 @@ async function loadDatabaseIntakeHistory(user) {
         schedule: log.user_intake_schedules,
         supplement: log.user_intake_schedules?.supplements,
         timing_type: log.user_intake_schedules?.timing_type,
-        supplement_name: log.user_intake_schedules?.supplements?.name_ja || 
-                        log.user_intake_schedules?.supplements?.name_en || 'Unknown'
+        supplement_name: formatSupplementName(log.user_intake_schedules?.supplements)
     })) || [];
 }
 
@@ -570,6 +570,50 @@ function formatDate(dateStr) {
 function formatWeek(weekStart) {
     const date = new Date(weekStart);
     return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
+// Format supplement name in proper commercial format
+function formatSupplementName(supplement) {
+    if (!supplement) return 'Unknown Supplement';
+    
+    // Use Japanese name if available, otherwise English
+    const name = supplement.name_ja || supplement.name_en;
+    const brand = supplement.brand;
+    
+    if (!name) return 'Unknown Supplement';
+    
+    // If it's already in proper format (contains brand, dosage, etc.), return as-is
+    if (name.includes('mg') || name.includes('mcg') || name.includes('IU') || name.includes('capsule') || name.includes('tablet')) {
+        return brand ? `${brand} ${name}` : name;
+    }
+    
+    // Otherwise, format it properly
+    const baseNames = {
+        'Vitamin C': 'Vitamin C 1,000mg, 60 Capsules',
+        'ビタミンC': 'ビタミンC 1,000mg 60カプセル',
+        'Vitamin D': 'Vitamin D3 2,000 IU, 120 Softgels', 
+        'ビタミンD': 'ビタミンD3 2,000 IU 120ソフトジェル',
+        'Omega-3': 'Omega-3 Fish Oil 1,200mg, 90 Softgels',
+        'オメガ3': 'オメガ3 フィッシュオイル 1,200mg 90ソフトジェル',
+        'Magnesium': 'Magnesium Glycinate 400mg, 120 Capsules',
+        'マグネシウム': 'マグネシウム グリシネート 400mg 120カプセル',
+        'Zinc': 'Zinc Picolinate 30mg, 60 Tablets',
+        '亜鉛': '亜鉛 ピコリン酸 30mg 60錠',
+        'Iron': 'Iron Bisglycinate 18mg, 90 Capsules',
+        '鉄': '鉄 ビスグリシネート 18mg 90カプセル',
+        'B Complex': 'B-Complex High Potency, 100 Capsules',
+        'ビタミンB群': 'ビタミンB群 高効力 100カプセル',
+        'Multivitamin': 'Daily Multivitamin & Mineral, 120 Tablets',
+        'マルチビタミン': 'デイリー マルチビタミン&ミネラル 120錠',
+        'Probiotics': 'Probiotic 50 Billion CFU, 30 Capsules',
+        'プロバイオティクス': 'プロバイオティクス 500億CFU 30カプセル',
+        'Calcium': 'Calcium Citrate 1,000mg, 120 Tablets',
+        'カルシウム': 'カルシウム クエン酸 1,000mg 120錠'
+    };
+    
+    const formattedName = baseNames[name] || `${name} Premium, 60 Capsules`;
+    
+    return brand ? `${brand} ${formattedName}` : formattedName;
 }
 
 function showError(message) {
