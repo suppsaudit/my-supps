@@ -34,10 +34,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             await regenerateAllSchedules();
         }
         
-        // DEBUG: If still no schedules, create test data
+        // If still no schedules, generate from My Supps data or create minimal test data
         if (userSchedules.length === 0) {
-            console.log('🔧 DEBUG: Creating test schedule data');
-            await createTestScheduleData();
+            console.log('🔧 No schedules found, checking My Supps data...');
+            await generateSchedulesFromMySupps();
         }
         
         // Update UI
@@ -662,14 +662,90 @@ async function updateCurrentScoreChart() {
         let nutrients = {};
         
         if (window.isDemo || !window.supabase) {
-            // Demo mode: use mock data
-            console.log('📊 Demo mode: calculating nutrients from test data');
+            // Demo mode: extract nutrients from supplement data
+            console.log('📊 Demo mode: calculating nutrients from supplement data');
             
             takenSupplements.forEach(schedule => {
-                // Mock nutrient data for test supplements
-                const mockNutrients = getMockNutrientData(schedule.supplements.id);
+                const supplement = schedule.supplements;
                 
-                mockNutrients.forEach(nutrient => {
+                // Extract nutrients from supplement data
+                const extractedNutrients = extractNutrientsFromSupplement(supplement);
+                
+                extractedNutrients.forEach(nutrient => {
+                    if (!nutrients[nutrient.name]) {
+                        nutrients[nutrient.name] = {
+                            amount: 0,
+                            unit: nutrient.unit,
+                            rda: nutrient.rda || 100 // Default RDA
+                        };
+                    }
+                    nutrients[nutrient.name].amount += nutrient.amount;
+                });
+            });
+        } else {
+            // Database mode or API mode
+            console.log('📊 API mode: fetching nutrient data');
+            
+            for (const schedule of takenSupplements) {
+                const supplement = schedule.supplements;
+                let supplementNutrients = [];
+                
+                // Try to get from database first
+                if (window.supabase) {
+                    try {
+                        const { data: dbNutrients } = await supabase
+                            .from('supplement_nutrients')
+                            .select(`
+                                *,
+                                nutrients (
+                                    name_ja,
+                                    name_en,
+                                    unit
+                                )
+                            `)
+                            .eq('supplement_id', supplement.id);
+                        
+                        if (dbNutrients && dbNutrients.length > 0) {
+                            dbNutrients.forEach(item => {
+                                supplementNutrients.push({
+                                    name: item.nutrients.name_ja || item.nutrients.name_en,
+                                    amount: item.amount_per_serving,
+                                    unit: item.nutrients.unit,
+                                    rda: getRDAValue(item.nutrients.name_ja || item.nutrients.name_en)
+                                });
+                            });
+                        }
+                    } catch (dbError) {
+                        console.log('Database lookup failed, trying API extraction');
+                    }
+                }
+                
+                // If no database data, try DSLD API
+                if (supplementNutrients.length === 0 && window.dsldApi) {
+                    try {
+                        const dsldData = await window.dsldApi.getProductDetails(supplement.dsld_id || supplement.id);
+                        if (dsldData && dsldData.nutrients) {
+                            dsldData.nutrients.forEach(nutrient => {
+                                supplementNutrients.push({
+                                    name: nutrient.name,
+                                    amount: parseFloat(nutrient.amount) || 0,
+                                    unit: nutrient.unit,
+                                    rda: getRDAValue(nutrient.name)
+                                });
+                            });
+                        }
+                    } catch (apiError) {
+                        console.log('DSLD API lookup failed, using name extraction');
+                    }
+                }
+                
+                // Fallback to name-based extraction
+                if (supplementNutrients.length === 0) {
+                    supplementNutrients = extractNutrientsFromSupplement(supplement);
+                }
+                
+                // Aggregate all nutrients
+                supplementNutrients.forEach(nutrient => {
                     if (!nutrients[nutrient.name]) {
                         nutrients[nutrient.name] = {
                             amount: 0,
@@ -679,38 +755,7 @@ async function updateCurrentScoreChart() {
                     }
                     nutrients[nutrient.name].amount += nutrient.amount;
                 });
-            });
-        } else {
-            // Database mode
-            const supplements = takenSupplements.map(s => s.supplements.id);
-            
-            // Load nutrient data for these supplements
-            const { data: nutrientData, error } = await supabase
-                .from('supplement_nutrients')
-                .select(`
-                    *,
-                    nutrients (
-                        name_ja,
-                        name_en,
-                        unit
-                    )
-                `)
-                .in('supplement_id', supplements);
-            
-            if (error) throw error;
-            
-            // Aggregate nutrients
-            nutrientData.forEach(item => {
-                const name = item.nutrients.name_ja || item.nutrients.name_en;
-                if (!nutrients[name]) {
-                    nutrients[name] = {
-                        amount: 0,
-                        unit: item.nutrients.unit,
-                        rda: 100 // Default RDA, will be updated from NIH ODS data
-                    };
-                }
-                nutrients[name].amount += item.amount_per_serving;
-            });
+            }
         }
         
         // Update chart
@@ -816,27 +861,249 @@ window.showIntakeHistory = function() {
     alert('過去の摂取ログ機能は近日実装予定です');
 }
 
-// Get mock nutrient data for test supplements
-function getMockNutrientData(supplementId) {
-    const mockNutrientDatabase = {
-        'test-vitamin-c': [
-            { name: 'ビタミンC', amount: 1000, unit: 'mg', rda: 90 }
-        ],
-        'test-vitamin-d': [
-            { name: 'ビタミンD', amount: 2000, unit: 'IU', rda: 600 }
-        ],
-        'test-multivitamin': [
-            { name: 'ビタミンC', amount: 500, unit: 'mg', rda: 90 },  // 重複テスト用
-            { name: 'ビタミンE', amount: 15, unit: 'mg', rda: 15 },
-            { name: 'ビタミンB6', amount: 1.3, unit: 'mg', rda: 1.3 },
-            { name: '亜鉛', amount: 11, unit: 'mg', rda: 11 }
-        ]
-    };
+// Extract nutrients from any supplement data
+function extractNutrientsFromSupplement(supplement) {
+    const nutrients = [];
     
-    return mockNutrientDatabase[supplementId] || [];
+    // If supplement has explicit nutrients array
+    if (supplement.nutrients && Array.isArray(supplement.nutrients)) {
+        supplement.nutrients.forEach(nutrient => {
+            nutrients.push({
+                name: nutrient.name_ja || nutrient.name_en || nutrient.name,
+                amount: parseFloat(nutrient.amount) || 0,
+                unit: nutrient.unit || 'mg',
+                rda: getRDAValue(nutrient.name_ja || nutrient.name_en || nutrient.name)
+            });
+        });
+        return nutrients;
+    }
+    
+    // Extract from supplement name using pattern matching
+    const nameToAnalyze = (supplement.name_ja || supplement.name_en || supplement.name || '').toLowerCase();
+    
+    // Vitamin patterns
+    const vitaminPatterns = [
+        { pattern: /ビタミンc|vitamin\s*c/i, name: 'ビタミンC', unit: 'mg', rda: 90, extract: /(\d+(?:\.\d+)?)\s*mg/i },
+        { pattern: /ビタミンd|vitamin\s*d/i, name: 'ビタミンD', unit: 'IU', rda: 600, extract: /(\d+(?:\.\d+)?)\s*(?:iu|ユニット)/i },
+        { pattern: /ビタミンe|vitamin\s*e/i, name: 'ビタミンE', unit: 'mg', rda: 15, extract: /(\d+(?:\.\d+)?)\s*mg/i },
+        { pattern: /ビタミンb6|vitamin\s*b6/i, name: 'ビタミンB6', unit: 'mg', rda: 1.3, extract: /(\d+(?:\.\d+)?)\s*mg/i },
+        { pattern: /ビタミンb12|vitamin\s*b12/i, name: 'ビタミンB12', unit: 'mcg', rda: 2.4, extract: /(\d+(?:\.\d+)?)\s*(?:mcg|μg)/i },
+        { pattern: /葉酸|folic\s*acid|folate/i, name: '葉酸', unit: 'mcg', rda: 400, extract: /(\d+(?:\.\d+)?)\s*(?:mcg|μg)/i }
+    ];
+    
+    // Mineral patterns
+    const mineralPatterns = [
+        { pattern: /亜鉛|zinc/i, name: '亜鉛', unit: 'mg', rda: 11, extract: /(\d+(?:\.\d+)?)\s*mg/i },
+        { pattern: /鉄|iron/i, name: '鉄', unit: 'mg', rda: 8, extract: /(\d+(?:\.\d+)?)\s*mg/i },
+        { pattern: /マグネシウム|magnesium/i, name: 'マグネシウム', unit: 'mg', rda: 400, extract: /(\d+(?:\.\d+)?)\s*mg/i },
+        { pattern: /カルシウム|calcium/i, name: 'カルシウム', unit: 'mg', rda: 1000, extract: /(\d+(?:\.\d+)?)\s*mg/i },
+        { pattern: /セレン|selenium/i, name: 'セレン', unit: 'mcg', rda: 55, extract: /(\d+(?:\.\d+)?)\s*(?:mcg|μg)/i }
+    ];
+    
+    // Other nutrients
+    const otherPatterns = [
+        { pattern: /オメガ3|omega.*3|epa|dha/i, name: 'オメガ3', unit: 'mg', rda: 1000, extract: /(\d+(?:\.\d+)?)\s*mg/i },
+        { pattern: /コエンザイム|coq10|ubiquinone/i, name: 'コエンザイムQ10', unit: 'mg', rda: 100, extract: /(\d+(?:\.\d+)?)\s*mg/i },
+        { pattern: /プロバイオティクス|probiotics/i, name: 'プロバイオティクス', unit: 'CFU', rda: 1000000000, extract: /(\d+(?:\.\d+)?)\s*(?:billion|億)\s*cfu/i },
+        { pattern: /カルノシン|carnosine/i, name: 'カルノシン', unit: 'mg', rda: 500, extract: /(\d+(?:\.\d+)?)\s*mg/i },
+        { pattern: /クルクミン|curcumin|ウコン|turmeric/i, name: 'クルクミン', unit: 'mg', rda: 500, extract: /(\d+(?:\.\d+)?)\s*mg/i },
+        { pattern: /アシュワガンダ|ashwagandha/i, name: 'アシュワガンダ', unit: 'mg', rda: 450, extract: /(\d+(?:\.\d+)?)\s*mg/i }
+    ];
+    
+    const allPatterns = [...vitaminPatterns, ...mineralPatterns, ...otherPatterns];
+    
+    // For multivitamins, check all patterns
+    if (nameToAnalyze.includes('マルチ') || nameToAnalyze.includes('multi')) {
+        allPatterns.forEach(pattern => {
+            if (pattern.pattern.test(nameToAnalyze)) {
+                // For multivitamins, use standard amounts
+                const standardAmount = getStandardAmount(pattern.name);
+                nutrients.push({
+                    name: pattern.name,
+                    amount: standardAmount,
+                    unit: pattern.unit,
+                    rda: pattern.rda
+                });
+            }
+        });
+    } else {
+        // For single supplements, extract specific amounts
+        allPatterns.forEach(pattern => {
+            if (pattern.pattern.test(nameToAnalyze)) {
+                const match = nameToAnalyze.match(pattern.extract);
+                const amount = match ? parseFloat(match[1]) : getStandardAmount(pattern.name);
+                
+                nutrients.push({
+                    name: pattern.name,
+                    amount: amount,
+                    unit: pattern.unit,
+                    rda: pattern.rda
+                });
+            }
+        });
+    }
+    
+    return nutrients;
 }
 
-// DEBUG: Create test schedule data
+// Get standard amount for multivitamins
+function getStandardAmount(nutrientName) {
+    const standardAmounts = {
+        'ビタミンC': 500,
+        'ビタミンD': 1000,
+        'ビタミンE': 15,
+        'ビタミンB6': 1.3,
+        'ビタミンB12': 2.4,
+        '葉酸': 400,
+        '亜鉛': 11,
+        '鉄': 8,
+        'マグネシウム': 200,
+        'カルシウム': 500,
+        'セレン': 55
+    };
+    
+    return standardAmounts[nutrientName] || 100;
+}
+
+// Get RDA value for nutrients
+function getRDAValue(nutrientName) {
+    const rdaValues = {
+        'ビタミンC': 90,
+        'ビタミンD': 600,
+        'ビタミンE': 15,
+        'ビタミンB6': 1.3,
+        'ビタミンB12': 2.4,
+        '葉酸': 400,
+        '亜鉛': 11,
+        '鉄': 8,
+        'マグネシウム': 400,
+        'カルシウム': 1000,
+        'セレン': 55,
+        'オメガ3': 1000,
+        'コエンザイムQ10': 100,
+        'プロバイオティクス': 1000000000,
+        'カルノシン': 500,
+        'クルクミン': 500,
+        'アシュワガンダ': 450
+    };
+    
+    return rdaValues[nutrientName] || 100;
+}
+
+// Generate schedules from existing My Supps data
+async function generateSchedulesFromMySupps() {
+    try {
+        const user = await getCurrentUser();
+        if (!user) return;
+        
+        console.log('🔍 Checking for existing My Supps data...');
+        
+        let mySupplements = [];
+        
+        // Get My Supps data from localStorage or database
+        if (window.isDemo || !window.supabase) {
+            const mockUserSupps = JSON.parse(localStorage.getItem('mockUserSupplements') || '[]');
+            const mockSupplements = JSON.parse(localStorage.getItem('mockSupplements') || '[]');
+            
+            mySupplements = mockUserSupps
+                .filter(us => us.user_id === user.id && us.is_my_supps)
+                .map(us => mockSupplements.find(s => s.id === us.supplement_id))
+                .filter(Boolean);
+        } else {
+            try {
+                const { data } = await supabase
+                    .from('user_supplements')
+                    .select(`
+                        supplement_id,
+                        supplements (*)
+                    `)
+                    .eq('user_id', user.id)
+                    .eq('is_my_supps', true);
+                
+                mySupplements = data?.map(item => item.supplements).filter(Boolean) || [];
+            } catch (error) {
+                console.log('Database query failed, using fallback');
+            }
+        }
+        
+        console.log(`📊 Found ${mySupplements.length} supplements in My Supps`);
+        
+        if (mySupplements.length > 0) {
+            // Generate schedules from actual My Supps data
+            userSchedules = [];
+            
+            for (const supplement of mySupplements) {
+                const schedules = generateMockSchedules(supplement);
+                schedules.forEach(schedule => {
+                    schedule.user_id = user.id;
+                });
+                userSchedules.push(...schedules);
+            }
+            
+            localStorage.setItem('mockUserSchedules', JSON.stringify(userSchedules));
+            console.log(`✅ Generated ${userSchedules.length} schedules from My Supps data`);
+        } else {
+            // No My Supps data, create minimal demo
+            console.log('🔧 No My Supps data found, creating minimal demo');
+            await createMinimalDemoData();
+        }
+        
+    } catch (error) {
+        console.error('❌ Error generating schedules from My Supps:', error);
+        await createMinimalDemoData();
+    }
+}
+
+// Create minimal demo data for empty state
+async function createMinimalDemoData() {
+    try {
+        const user = await getCurrentUser();
+        if (!user) return;
+        
+        console.log('🔧 Creating minimal demo data...');
+        
+        // Create one simple test supplement
+        const testSupplement = {
+            id: 'demo-vitamin-c',
+            name_ja: 'ビタミンC 1000mg',
+            name_en: 'Vitamin C 1000mg',
+            brand: 'Demo Brand',
+            serving_size: '1 tablet',
+            nutrients: [
+                { name_ja: 'ビタミンC', amount: 1000, unit: 'mg' }
+            ]
+        };
+        
+        // Save to localStorage
+        localStorage.setItem('mockSupplements', JSON.stringify([testSupplement]));
+        localStorage.setItem('mockUserSupplements', JSON.stringify([{
+            user_id: user.id,
+            supplement_id: testSupplement.id,
+            is_my_supps: true,
+            is_selected: false
+        }]));
+        
+        // Create schedule
+        userSchedules = [{
+            id: 'demo-schedule-1',
+            user_id: user.id,
+            supplement_id: testSupplement.id,
+            time_of_day: 'morning',
+            timing_type: '朝食後',
+            frequency: '1日1回',
+            supplements: testSupplement
+        }];
+        
+        localStorage.setItem('mockUserSchedules', JSON.stringify(userSchedules));
+        
+        console.log('✅ Minimal demo data created with 1 supplement');
+        
+    } catch (error) {
+        console.error('❌ Error creating minimal demo data:', error);
+    }
+}
+
+// DEBUG: Create test schedule data (legacy)
 async function createTestScheduleData() {
     try {
         const user = await getCurrentUser();
