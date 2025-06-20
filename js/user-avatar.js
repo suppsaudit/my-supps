@@ -10,10 +10,15 @@ class UserAvatar {
     }
     
     async init() {
+        console.log('UserAvatar: Starting initialization');
         await this.waitForAuth();
+        console.log('UserAvatar: Auth ready, current user:', this.currentUser);
         this.createAvatarElement();
+        console.log('UserAvatar: Avatar element created');
         this.bindEvents();
+        console.log('UserAvatar: Events bound');
         this.updateUserInfo();
+        console.log('UserAvatar: User info updated');
     }
     
     async waitForAuth() {
@@ -38,14 +43,20 @@ class UserAvatar {
     }
     
     createAvatarElement() {
+        console.log('UserAvatar: Creating avatar element');
         // Find existing user-menu and replace it
         const existingUserMenu = document.getElementById('user-menu');
-        if (!existingUserMenu) return;
+        console.log('UserAvatar: Found existing user menu:', existingUserMenu);
+        if (!existingUserMenu) {
+            console.error('UserAvatar: No user-menu element found!');
+            return;
+        }
         
         // Create avatar container
         this.avatarContainer = document.createElement('div');
         this.avatarContainer.className = 'user-avatar';
         this.avatarContainer.innerHTML = this.getAvatarHTML();
+        console.log('UserAvatar: Avatar HTML:', this.avatarContainer.innerHTML);
         
         // Replace existing user menu
         existingUserMenu.parentNode.replaceChild(this.avatarContainer, existingUserMenu);
@@ -231,12 +242,29 @@ class UserAvatar {
 }
 
 // Initialize user avatar when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    // Only initialize if there's a user-menu element
-    if (document.getElementById('user-menu')) {
+function initUserAvatar() {
+    console.log('UserAvatar: DOM ready, checking for user-menu element');
+    const userMenuEl = document.getElementById('user-menu');
+    console.log('UserAvatar: User menu element found:', userMenuEl);
+    
+    if (userMenuEl) {
+        console.log('UserAvatar: Initializing UserAvatar class');
         window.userAvatar = new UserAvatar();
+    } else {
+        console.warn('UserAvatar: No user-menu element found, retrying in 1 second');
+        setTimeout(initUserAvatar, 1000);
     }
-});
+}
+
+// Multiple initialization attempts
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initUserAvatar);
+} else {
+    initUserAvatar();
+}
+
+// Fallback initialization
+setTimeout(initUserAvatar, 2000);
 
 // Export for external use
 window.UserAvatar = UserAvatar;
