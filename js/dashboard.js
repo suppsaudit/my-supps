@@ -478,10 +478,18 @@ async function loadDailyIntakeLogs() {
             
             dailyIntakeLogs = {};
             
+            // Check the structure of mockLogs
+            console.log('🔍 mockLogs keys:', Object.keys(mockLogs));
+            console.log('🔍 mockLogs values:', Object.values(mockLogs));
+            console.log('🔍 Today\'s date for comparison:', today);
+            
             // Filter logs for today and convert to lookup object
-            Object.values(mockLogs).forEach(log => {
-                console.log('🔍 Checking log:', log);
-                if (log.taken_date === today) {
+            // The key format is: {scheduleId}-{date}
+            Object.keys(mockLogs).forEach(logKey => {
+                const log = mockLogs[logKey];
+                console.log('🔍 Checking log key:', logKey, 'log:', log);
+                
+                if (log && log.taken_date === today && log.is_taken) {
                     dailyIntakeLogs[log.schedule_id] = log;
                     console.log('✅ Added log for schedule:', log.schedule_id);
                 }
