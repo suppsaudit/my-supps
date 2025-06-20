@@ -532,8 +532,19 @@ function formatScheduleItem(schedule) {
     const timingDisplay = schedule.timing_type || '指定なし';
     const supplementName = formatSupplementNameForSchedule(schedule.supplements);
     
+    // Debug log to check schedule data
+    console.log('🔍 Schedule data for display:', {
+        id: schedule.id,
+        dosage_current: schedule.dosage_current,
+        dosage_total: schedule.dosage_total,
+        dosage_position: schedule.dosage_position,
+        total_times: schedule.total_times,
+        dosage_unit: schedule.dosage_unit
+    });
+    
     // Format dosage display (e.g., "1/2 粒" for split dosages)
     const dosageDisplay = formatDosageDisplay(schedule);
+    console.log('📊 Formatted dosage display:', dosageDisplay);
     
     return `
         <div class="schedule-item" data-schedule-id="${schedule.id}">
