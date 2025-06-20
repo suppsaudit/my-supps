@@ -584,9 +584,9 @@ function initializeCurrentScoreChart() {
             datasets: [{
                 label: '摂取量',
                 data: [],
-                backgroundColor: 'rgba(255, 20, 147, 0.2)',
-                borderColor: 'rgba(255, 20, 147, 1)',
-                pointBackgroundColor: 'rgba(255, 20, 147, 1)',
+                backgroundColor: 'rgba(255, 165, 0, 0.2)',
+                borderColor: 'rgba(255, 165, 0, 1)',
+                pointBackgroundColor: 'rgba(255, 165, 0, 1)',
                 pointBorderColor: '#fff',
                 pointHoverBackgroundColor: '#fff',
                 pointHoverBorderColor: 'rgba(255, 20, 147, 1)'
@@ -657,38 +657,61 @@ async function updateCurrentScoreChart() {
         }
         
         // Get supplements data
-        const supplements = userSchedules
-            .filter(s => takenScheduleIds.includes(s.id))
-            .map(s => s.supplements.id);
+        const takenSupplements = userSchedules.filter(s => takenScheduleIds.includes(s.id));
         
-        // Load nutrient data for these supplements
-        const { data: nutrientData, error } = await supabase
-            .from('supplement_nutrients')
-            .select(`
-                *,
-                nutrients (
-                    name_ja,
-                    name_en,
-                    unit
-                )
-            `)
-            .in('supplement_id', supplements);
+        let nutrients = {};
         
-        if (error) throw error;
-        
-        // Aggregate nutrients
-        const nutrients = {};
-        nutrientData.forEach(item => {
-            const name = item.nutrients.name_ja || item.nutrients.name_en;
-            if (!nutrients[name]) {
-                nutrients[name] = {
-                    amount: 0,
-                    unit: item.nutrients.unit,
-                    rda: 100 // Default RDA, will be updated from NIH ODS data
-                };
-            }
-            nutrients[name].amount += item.amount_per_serving;
-        });
+        if (window.isDemo || !window.supabase) {
+            // Demo mode: use mock data
+            console.log('📊 Demo mode: calculating nutrients from test data');
+            
+            takenSupplements.forEach(schedule => {
+                // Mock nutrient data for test supplements
+                const mockNutrients = getMockNutrientData(schedule.supplements.id);
+                
+                mockNutrients.forEach(nutrient => {
+                    if (!nutrients[nutrient.name]) {
+                        nutrients[nutrient.name] = {
+                            amount: 0,
+                            unit: nutrient.unit,
+                            rda: nutrient.rda
+                        };
+                    }
+                    nutrients[nutrient.name].amount += nutrient.amount;
+                });
+            });
+        } else {
+            // Database mode
+            const supplements = takenSupplements.map(s => s.supplements.id);
+            
+            // Load nutrient data for these supplements
+            const { data: nutrientData, error } = await supabase
+                .from('supplement_nutrients')
+                .select(`
+                    *,
+                    nutrients (
+                        name_ja,
+                        name_en,
+                        unit
+                    )
+                `)
+                .in('supplement_id', supplements);
+            
+            if (error) throw error;
+            
+            // Aggregate nutrients
+            nutrientData.forEach(item => {
+                const name = item.nutrients.name_ja || item.nutrients.name_en;
+                if (!nutrients[name]) {
+                    nutrients[name] = {
+                        amount: 0,
+                        unit: item.nutrients.unit,
+                        rda: 100 // Default RDA, will be updated from NIH ODS data
+                    };
+                }
+                nutrients[name].amount += item.amount_per_serving;
+            });
+        }
         
         // Update chart
         const labels = Object.keys(nutrients);
@@ -793,6 +816,26 @@ window.showIntakeHistory = function() {
     alert('過去の摂取ログ機能は近日実装予定です');
 }
 
+// Get mock nutrient data for test supplements
+function getMockNutrientData(supplementId) {
+    const mockNutrientDatabase = {
+        'test-vitamin-c': [
+            { name: 'ビタミンC', amount: 1000, unit: 'mg', rda: 90 }
+        ],
+        'test-vitamin-d': [
+            { name: 'ビタミンD', amount: 2000, unit: 'IU', rda: 600 }
+        ],
+        'test-multivitamin': [
+            { name: 'ビタミンC', amount: 500, unit: 'mg', rda: 90 },  // 重複テスト用
+            { name: 'ビタミンE', amount: 15, unit: 'mg', rda: 15 },
+            { name: 'ビタミンB6', amount: 1.3, unit: 'mg', rda: 1.3 },
+            { name: '亜鉛', amount: 11, unit: 'mg', rda: 11 }
+        ]
+    };
+    
+    return mockNutrientDatabase[supplementId] || [];
+}
+
 // DEBUG: Create test schedule data
 async function createTestScheduleData() {
     try {
@@ -816,6 +859,13 @@ async function createTestScheduleData() {
                 name_en: 'Vitamin D3 2000IU',
                 brand: 'Test Brand',
                 serving_size: '1 capsule'
+            },
+            {
+                id: 'test-multivitamin',
+                name_ja: 'マルチビタミン',
+                name_en: 'Multivitamin',
+                brand: 'Test Brand',
+                serving_size: '1 tablet'
             }
         ];
         
@@ -860,6 +910,15 @@ async function createTestScheduleData() {
                 timing_type: '朝食後',
                 frequency: '1日1回',
                 supplements: testSupplements[1]
+            },
+            {
+                id: 'test-schedule-4',
+                user_id: user.id,
+                supplement_id: 'test-multivitamin',
+                time_of_day: 'morning',
+                timing_type: '朝食後',
+                frequency: '1日1回',
+                supplements: testSupplements[2]
             }
         ];
         
@@ -867,6 +926,8 @@ async function createTestScheduleData() {
         localStorage.setItem('mockUserSchedules', JSON.stringify(userSchedules));
         
         console.log('✅ Test data created:', userSchedules.length, 'schedules');
+        console.log('📝 Test supplements: ビタミンC, ビタミンD, マルチビタミン');
+        console.log('🧪 重複テスト: ビタミンCがビタミンCサプリ(1000mg)とマルチビタミン(500mg)に含まれるため、合計1500mgで表示されます');
         
     } catch (error) {
         console.error('❌ Error creating test data:', error);
