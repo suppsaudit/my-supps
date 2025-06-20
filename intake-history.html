@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>摂取ログ履歴 - MY SUPPS</title>
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Supabase CDN v2 -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- App Configuration -->
+    <script src="js/config.js"></script>
+    
+    <!-- Google Calendar API -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/intake-history.css">
+</head>
+<body>
+    <header id="main-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <a href="index.html" class="logo-link">
+                        <h1><span>M</span><span>Y</span> <span>S</span><span>U</span><span>P</span><span>P</span><span class="tilted-p">S</span></h1>
+                        <p class="tagline">サプリメントをData Drivenに管理するなら。</p>
+                    </a>
+                </div>
+                <nav class="navigation">
+                    <a href="my-supps.html" class="nav-link">MY SUPPS</a>
+                    <a href="supps-audit.html" class="nav-link">Supps Audit</a>
+                    <a href="dashboard.html" class="nav-link">マイページ</a>
+                    <div id="user-menu" class="user-menu"></div>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <main class="intake-history-page">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h2>摂取ログ履歴</h2>
+                <p class="page-description">過去の摂取記録を確認し、Google カレンダーと同期できます。</p>
+                
+                <!-- Google Calendar Integration -->
+                <div class="calendar-integration">
+                    <button id="google-calendar-auth" class="btn btn-primary" onclick="authorizeGoogleCalendar()">
+                        📅 Google カレンダーと連携
+                    </button>
+                    <button id="sync-to-calendar" class="btn btn-secondary" onclick="syncToGoogleCalendar()" style="display: none;">
+                        🔄 カレンダーに同期
+                    </button>
+                    <div id="calendar-status" class="calendar-status"></div>
+                </div>
+            </div>
+
+            <!-- Filter Controls -->
+            <div class="filter-controls">
+                <div class="date-range">
+                    <label for="start-date">開始日:</label>
+                    <input type="date" id="start-date" onchange="filterLogs()">
+                    
+                    <label for="end-date">終了日:</label>
+                    <input type="date" id="end-date" onchange="filterLogs()">
+                    
+                    <button class="btn btn-secondary" onclick="setDateRange('week')">過去1週間</button>
+                    <button class="btn btn-secondary" onclick="setDateRange('month')">過去1ヶ月</button>
+                    <button class="btn btn-secondary" onclick="setDateRange('all')">全期間</button>
+                </div>
+                
+                <div class="supplement-filter">
+                    <label for="supplement-filter">サプリメント:</label>
+                    <select id="supplement-filter" onchange="filterLogs()">
+                        <option value="">全て</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Statistics Summary -->
+            <div class="stats-summary">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-days">0</div>
+                    <div class="stat-label">記録日数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="total-intakes">0</div>
+                    <div class="stat-label">総摂取回数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="adherence-rate">0%</div>
+                    <div class="stat-label">平均摂取率</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="streak-days">0</div>
+                    <div class="stat-label">連続摂取日数</div>
+                </div>
+            </div>
+
+            <!-- Calendar View -->
+            <div class="calendar-view">
+                <div class="calendar-header">
+                    <button onclick="changeMonth(-1)">‹</button>
+                    <h3 id="calendar-month">2024年6月</h3>
+                    <button onclick="changeMonth(1)">›</button>
+                </div>
+                <div class="calendar-grid" id="calendar-grid">
+                    <!-- Calendar will be generated here -->
+                </div>
+            </div>
+
+            <!-- Intake History List -->
+            <div class="history-list">
+                <h3>摂取記録一覧</h3>
+                <div id="history-entries">
+                    <!-- History entries will be loaded here -->
+                </div>
+                <div class="pagination">
+                    <button id="load-more" class="btn btn-secondary" onclick="loadMoreHistory()">
+                        さらに読み込む
+                    </button>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="charts-section">
+                <h3>摂取傾向分析</h3>
+                
+                <!-- Adherence Trend Chart -->
+                <div class="chart-container">
+                    <h4>摂取率の推移</h4>
+                    <canvas id="adherence-chart"></canvas>
+                </div>
+                
+                <!-- Supplement Frequency Chart -->
+                <div class="chart-container">
+                    <h4>サプリメント別摂取頻度</h4>
+                    <canvas id="frequency-chart"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/navigation.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/user-avatar.js"></script>
+    <script src="js/google-calendar-integration.js"></script>
+    <script src="js/intake-history.js"></script>
+</body>
+</html>
