@@ -27,24 +27,40 @@ const INSTRUCTION_PATTERNS = {
 };
 
 // Generate intake schedule from supplement data
-async function generateIntakeSchedule(supplementId, instructions = '') {
+async function generateIntakeSchedule(supplementId, instructions = '', servingSize = '') {
     const schedules = [];
     
-    // Parse instructions
+    // Parse instructions and serving size
     const parsedSchedule = parseInstructions(instructions);
+    const dosageInfo = parseServingSize(servingSize);
     
     // If no specific times found, use default based on frequency
     if (parsedSchedule.times.length === 0) {
         parsedSchedule.times = getDefaultTimes(parsedSchedule.frequency);
     }
     
-    // Create schedule entries
-    parsedSchedule.times.forEach(timeOfDay => {
+    // Calculate dosage per time slot
+    const totalTimes = parsedSchedule.times.length;
+    const dosagePerTime = calculateDosagePerTime(dosageInfo.amount, totalTimes);
+    
+    // Create schedule entries with proper dosage split
+    parsedSchedule.times.forEach((timeOfDay, index) => {
+        // Calculate individual dosage, handling remainder
+        let individualDosage = dosagePerTime.individual;
+        if (dosagePerTime.hasRemainder && index < dosagePerTime.remainder) {
+            individualDosage += 1; // Distribute remainder to first few time slots
+        }
+        
         schedules.push({
             supplement_id: supplementId,
             time_of_day: timeOfDay,
             timing_type: parsedSchedule.timingType,
-            frequency: instructions
+            frequency: instructions,
+            dosage_current: individualDosage,
+            dosage_total: dosageInfo.amount,
+            dosage_unit: dosageInfo.unit,
+            dosage_position: index + 1, // 1st, 2nd, etc.
+            total_times: totalTimes
         });
     });
     
@@ -97,6 +113,48 @@ function parseInstructions(instructions) {
     return result;
 }
 
+// Parse serving size to extract dosage information
+function parseServingSize(servingSize) {
+    if (!servingSize) return { amount: 1, unit: '粒' };
+    
+    // Extract number and unit from serving size
+    const numberMatch = servingSize.match(/(\d+(?:\.\d+)?)/);
+    const amount = numberMatch ? parseFloat(numberMatch[1]) : 1;
+    
+    // Determine unit
+    let unit = '粒';
+    if (servingSize.includes('capsule') || servingSize.includes('カプセル')) {
+        unit = 'カプセル';
+    } else if (servingSize.includes('tablet') || servingSize.includes('錠')) {
+        unit = '錠';
+    } else if (servingSize.includes('softgel') || servingSize.includes('ソフトジェル')) {
+        unit = 'ソフトジェル';
+    } else if (servingSize.includes('ml') || servingSize.includes('mL')) {
+        unit = 'ml';
+    } else if (servingSize.includes('粒')) {
+        unit = '粒';
+    }
+    
+    return { amount, unit };
+}
+
+// Calculate dosage per time slot
+function calculateDosagePerTime(totalAmount, timesPerDay) {
+    if (timesPerDay <= 1) {
+        return { individual: totalAmount, remainder: 0 };
+    }
+    
+    // Try to split evenly, but handle odd numbers
+    const baseAmount = Math.floor(totalAmount / timesPerDay);
+    const remainder = totalAmount % timesPerDay;
+    
+    return {
+        individual: baseAmount,
+        remainder: remainder,
+        hasRemainder: remainder > 0
+    };
+}
+
 // Get default times based on frequency
 function getDefaultTimes(frequency) {
     switch (frequency) {
@@ -118,8 +176,12 @@ async function saveIntakeSchedule(userId, supplementId, instructions) {
     try {
         console.log('💾 Saving schedule:', { userId, supplementId, instructions });
         
-        // Generate schedules
-        const schedules = await generateIntakeSchedule(supplementId, instructions);
+        // Get supplement data for serving size
+        const supplement = await getSupplementData(supplementId);
+        const servingSize = supplement?.serving_size || '';
+        
+        // Generate schedules with dosage information
+        const schedules = await generateIntakeSchedule(supplementId, instructions, servingSize);
         console.log('📅 Generated schedules:', schedules);
         
         // Prepare data for insertion
@@ -155,16 +217,16 @@ async function saveIntakeSchedule(userId, supplementId, instructions) {
         // Insert schedules to database
         const { data, error } = await supabase
             .from('user_intake_schedules')
-            .upsert(scheduleData, {
-                onConflict: 'user_id,supplement_id,time_of_day'
-            });
+            .insert(scheduleData)
+            .select();
         
         if (error) throw error;
         
+        console.log('✅ Schedules saved to database:', data);
         return { success: true, data };
         
     } catch (error) {
-        console.error('❌ Error saving intake schedule:', error);
+        console.error('❌ Error saving schedule:', error);
         return { success: false, error };
     }
 }
@@ -185,126 +247,29 @@ async function updateIntakeSchedule(userId, supplementId, newInstructions) {
         return await saveIntakeSchedule(userId, supplementId, newInstructions);
         
     } catch (error) {
-        console.error('Error updating intake schedule:', error);
+        console.error('Error updating schedule:', error);
         return { success: false, error };
     }
 }
 
-// Get schedule summary for display
-function getScheduleSummary(schedules) {
-    const timeMap = {
-        morning: '朝',
-        day: '昼',
-        night: '夜',
-        before_sleep: '就寝前'
-    };
-    
-    const times = schedules.map(s => timeMap[s.time_of_day] || s.time_of_day);
-    const timingTypes = [...new Set(schedules.map(s => s.timing_type).filter(Boolean))];
-    
-    let summary = times.join('・');
-    if (timingTypes.length > 0) {
-        summary += ` (${timingTypes.join('・')})`;
-    }
-    
-    return summary;
-}
-
-// Auto-generate schedules when adding supplement to My Supps
-async function autoGenerateSchedule(userId, supplementId) {
+// Get supplement data by ID
+async function getSupplementData(supplementId) {
     try {
-        console.log('🔄 Auto-generating schedule for:', { userId, supplementId });
-        
-        // Try to get supplement data from database first
-        let supplement = null;
-        let instructions = '';
-        
-        if (!window.isDemo && window.supabase) {
-            const { data, error } = await supabase
+        if (window.isDemo || !window.supabase) {
+            // Demo mode: get from localStorage
+            const mockSupplements = JSON.parse(localStorage.getItem('mockSupplements') || '[]');
+            return mockSupplements.find(s => s.id === supplementId);
+        } else {
+            // Database mode
+            const { data } = await supabase
                 .from('supplements')
                 .select('*')
                 .eq('id', supplementId)
                 .single();
-            
-            if (!error && data) {
-                supplement = data;
-            }
+            return data;
         }
-        
-        // If not found in database, get from mock data or DSLD API
-        if (!supplement) {
-            const mockSupplements = JSON.parse(localStorage.getItem('mockSupplements') || '[]');
-            supplement = mockSupplements.find(s => s.id === supplementId);
-            
-            if (!supplement) {
-                console.log('⚠️ Supplement not found, using default schedule');
-                instructions = '1日1回';
-            }
-        }
-        
-        if (supplement) {
-            // Extract dosage instructions from supplement data
-            instructions = extractDosageInstructions(supplement);
-            console.log('📋 Extracted instructions:', instructions);
-        }
-        
-        // Generate and save schedule
-        const result = await saveIntakeSchedule(userId, supplementId, instructions);
-        console.log('💾 Schedule save result:', result);
-        
-        return result;
-        
     } catch (error) {
-        console.error('❌ Error auto-generating schedule:', error);
-        // Default schedule if error occurs
-        return await saveIntakeSchedule(userId, supplementId, '1日1回');
+        console.error('Error getting supplement data:', error);
+        return null;
     }
 }
-
-// Extract dosage instructions from supplement data
-function extractDosageInstructions(supplement) {
-    // Check various fields where dosage information might be stored
-    const fields = [
-        'dosage_instructions',
-        'dosage_form',
-        'serving_size',
-        'directions_for_use',
-        'instructions',
-        'label_serving_info'
-    ];
-    
-    for (const field of fields) {
-        if (supplement[field] && typeof supplement[field] === 'string') {
-            const value = supplement[field];
-            
-            // Look for common Japanese patterns
-            if (value.includes('朝晩') || value.includes('2回')) {
-                return '朝晩2回';
-            }
-            if (value.includes('朝昼晩') || value.includes('3回')) {
-                return '朝昼晩3回';
-            }
-            if (value.includes('1日1回') || value.includes('daily')) {
-                return '1日1回';
-            }
-            if (value.includes('朝') && !value.includes('晩')) {
-                return '1日1回 朝';
-            }
-            if (value.includes('夜') || value.includes('就寝前')) {
-                return '1日1回 就寝前';
-            }
-        }
-    }
-    
-    // Default to once daily
-    return '1日1回';
-}
-
-// Export functions for use in other modules
-window.scheduleGenerator = {
-    generateIntakeSchedule,
-    saveIntakeSchedule,
-    updateIntakeSchedule,
-    getScheduleSummary,
-    autoGenerateSchedule
-};

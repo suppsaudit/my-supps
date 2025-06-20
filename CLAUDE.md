@@ -633,6 +633,42 @@ The header implements a dynamic collapsing system that adapts to user scroll beh
 - Proper redirect URI configuration
 - User consent for email and profile access
 
+## Resolved Issues & Solutions (2025-06-20)
+
+### 5. TODAY'S SCHEDULE 用量分割表示の実装
+**問題:** 朝晩に分割すべきサプリメントが1回分にまとめて表示される
+**具体例:** 
+- ビタミンC 2粒/日 → 朝に2粒表示（本来は朝1粒、夜1粒に分割すべき）
+- バッファードCコンプレックス → 朝食後にまとめて表示
+
+**実装内容:**
+1. **スケジュール生成の改善** (`js/schedule-generator.js`)
+   - `parseServingSize()`: serving_sizeから用量と単位を抽出
+   - `calculateDosagePerTime()`: 1日の総量を時間帯で分割
+   - 余りがある場合は最初の時間帯に振り分け
+
+2. **用量表示形式の統一** (`js/dashboard-utils.js`)
+   - `formatDosageDisplay()`: 「1/2 (1粒)」形式で表示
+   - 何番目/総回数と具体的な粒数を併記
+
+3. **商品名表示の品質向上**
+   - `formatSupplementNameForSchedule()`: 商品名を適切な形式で表示
+   - 「ブランド名 + 詳細商品名 + 用量 + 内容量」の形式を維持
+
+**表示例:**
+- Before: 「朝食後 2」
+- After: 「朝食後 1/2 (1粒)」「夕食後 2/2 (1粒)」
+
+**Database Schema更新:**
+```sql
+-- user_intake_schedules テーブルに用量分割カラム追加
+ALTER TABLE user_intake_schedules ADD COLUMN dosage_current INTEGER;
+ALTER TABLE user_intake_schedules ADD COLUMN dosage_total INTEGER;
+ALTER TABLE user_intake_schedules ADD COLUMN dosage_unit VARCHAR(10);
+ALTER TABLE user_intake_schedules ADD COLUMN dosage_position INTEGER;
+ALTER TABLE user_intake_schedules ADD COLUMN total_times INTEGER;
+```
+
 ## Resolved Issues & Solutions (2025-06-17)
 
 ### 1. MY SUPPS追加機能の完全修復

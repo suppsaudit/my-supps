@@ -458,7 +458,10 @@ function updateScheduleDisplay() {
     scheduleContent.innerHTML = schedulesForTime.map(schedule => {
         const isChecked = dailyIntakeLogs[schedule.id]?.is_taken || false;
         const timingDisplay = schedule.timing_type || '指定なし';
-        const supplementName = schedule.supplements.name_ja || schedule.supplements.name_en || schedule.supplements.name || 'Unknown Supplement';
+        const supplementName = formatSupplementNameForSchedule(schedule.supplements);
+        
+        // Format dosage display (e.g., "1/2 粒" for split dosages)
+        const dosageDisplay = formatDosageDisplay(schedule);
         
         return `
             <div class="schedule-item" data-schedule-id="${schedule.id}">
@@ -466,7 +469,7 @@ function updateScheduleDisplay() {
                     <div class="supplement-name">${supplementName}</div>
                     <div class="supplement-timing">
                         <span class="timing-badge">${timingDisplay}</span>
-                        <span>${schedule.supplements.serving_size || ''}</span>
+                        <span class="dosage-display">${dosageDisplay}</span>
                     </div>
                 </div>
                 <label class="intake-toggle">
