@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MY SUPPS - Test Runner</title>
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Supabase CDN -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- App Configuration -->
+    <script src="js/config.js"></script>
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .test-header h1 {
+            color: #2d3748;
+            margin: 0 0 10px 0;
+            font-size: 2.5rem;
+        }
+        
+        .test-header p {
+            color: #718096;
+            margin: 0;
+            font-size: 1.1rem;
+        }
+        
+        .test-controls {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .test-btn {
+            background: linear-gradient(45deg, #ff6b9d, #c44569);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(255, 107, 157, 0.3);
+        }
+        
+        .test-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .test-btn.secondary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+        }
+        
+        .test-btn.success {
+            background: linear-gradient(45deg, #11998e, #38ef7d);
+        }
+        
+        .test-results {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .test-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .metric-card {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #3182ce;
+        }
+        
+        .metric-card.success {
+            border-left-color: #38a169;
+        }
+        
+        .metric-card.warning {
+            border-left-color: #d69e2e;
+        }
+        
+        .metric-card.error {
+            border-left-color: #e53e3e;
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2d3748;
+        }
+        
+        .metric-label {
+            color: #718096;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        
+        .test-log {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin-top: 20px;
+        }
+        
+        .test-item {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #cbd5e0;
+        }
+        
+        .test-item.passed {
+            background: #f0fff4;
+            border-left-color: #38a169;
+        }
+        
+        .test-item.failed {
+            background: #fff5f5;
+            border-left-color: #e53e3e;
+        }
+        
+        .test-item.skipped {
+            background: #fffaf0;
+            border-left-color: #d69e2e;
+        }
+        
+        .test-name {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+        
+        .test-details {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #ff6b9d;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .system-info {
+            background: #edf2f7;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #4a5568;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .test-header {
+                padding: 20px;
+            }
+            
+            .test-header h1 {
+                font-size: 2rem;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .test-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-header">
+        <h1>🧪 MY SUPPS Test Runner</h1>
+        <p>Comprehensive integration testing for API, caching, error handling, and performance</p>
+    </div>
+
+    <div class="test-controls">
+        <div class="button-group">
+            <button id="run-quick-tests" class="test-btn">
+                ⚡ Quick Tests
+            </button>
+            <button id="run-full-tests" class="test-btn">
+                🚀 Full Test Suite
+            </button>
+            <button id="test-api-health" class="test-btn secondary">
+                🏥 API Health Check
+            </button>
+            <button id="test-performance" class="test-btn secondary">
+                📊 Performance Test
+            </button>
+            <button id="clear-cache" class="test-btn secondary">
+                🧹 Clear Cache
+            </button>
+            <button id="export-results" class="test-btn success" disabled>
+                📄 Export Results
+            </button>
+        </div>
+    </div>
+
+    <div id="test-results" class="test-results hidden">
+        <h2>Test Results</h2>
+        
+        <div id="test-summary" class="test-summary">
+            <!-- Test metrics will be populated here -->
+        </div>
+        
+        <div id="test-details">
+            <!-- Detailed test results will be populated here -->
+        </div>
+        
+        <div class="test-log" id="test-log">
+            Ready to run tests...
+        </div>
+        
+        <div class="system-info" id="system-info">
+            <!-- System information will be populated here -->
+        </div>
+    </div>
+
+    <!-- Notification System -->
+    <script src="js/components/notification-system.js"></script>
+    
+    <!-- Unified API Integration -->
+    <script src="js/api/interfaces.js"></script>
+    <script src="js/api/config.js"></script>
+    <script src="js/api/clients/imd-client.js"></script>
+    <script src="js/api/mappers/imd-mapper.js"></script>
+    <script src="js/api/mappers/dsld-mapper.js"></script>
+    <script src="js/api/services/cache-manager.js"></script>
+    <script src="js/api/services/error-handler.js"></script>
+    <script src="js/api/services/performance-optimizer.js"></script>
+    <script src="js/api/services/unified-supplement-service.js"></script>
+    <script src="js/api/index.js"></script>
+    
+    <!-- Test Suite -->
+    <script src="js/tests/integration-test-suite.js"></script>
+    
+    <!-- App Scripts -->
+    <script src="js/navigation.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/dsld-api.js"></script>
+
+    <script>
+        class TestRunner {
+            constructor() {
+                this.currentResults = null;
+                this.setupEventListeners();
+                this.updateSystemInfo();
+                this.checkAPIAvailability();
+            }
+            
+            setupEventListeners() {
+                document.getElementById('run-quick-tests').addEventListener('click', () => {
+                    this.runQuickTests();
+                });
+                
+                document.getElementById('run-full-tests').addEventListener('click', () => {
+                    this.runFullTests();
+                });
+                
+                document.getElementById('test-api-health').addEventListener('click', () => {
+                    this.testAPIHealth();
+                });
+                
+                document.getElementById('test-performance').addEventListener('click', () => {
+                    this.testPerformance();
+                });
+                
+                document.getElementById('clear-cache').addEventListener('click', () => {
+                    this.clearCache();
+                });
+                
+                document.getElementById('export-results').addEventListener('click', () => {
+                    this.exportResults();
+                });
+            }
+            
+            async runQuickTests() {
+                this.setButtonState('run-quick-tests', true, 'Running Quick Tests...');
+                this.showResults();
+                this.logMessage('🚀 Starting Quick Test Suite...');
+                
+                try {
+                    const results = await window.runTests(true);
+                    this.displayResults(results);
+                    this.logMessage(`✅ Quick tests completed: ${results.stats.passed}/${results.stats.total} passed`);
+                } catch (error) {
+                    this.logMessage(`❌ Quick tests failed: ${error.message}`);
+                } finally {
+                    this.setButtonState('run-quick-tests', false, '⚡ Quick Tests');
+                }
+            }
+            
+            async runFullTests() {
+                this.setButtonState('run-full-tests', true, 'Running Full Test Suite...');
+                this.showResults();
+                this.logMessage('🚀 Starting Full Integration Test Suite...');
+                
+                try {
+                    const results = await window.runTests(false);
+                    this.displayResults(results);
+                    this.logMessage(`✅ Full tests completed: ${results.stats.passed}/${results.stats.total} passed`);
+                } catch (error) {
+                    this.logMessage(`❌ Full tests failed: ${error.message}`);
+                } finally {
+                    this.setButtonState('run-full-tests', false, '🚀 Full Test Suite');
+                }
+            }
+            
+            async testAPIHealth() {
+                this.setButtonState('test-api-health', true, 'Checking API Health...');
+                this.logMessage('🏥 Checking API health...');
+                
+                try {
+                    const response = await fetch('/api/health');
+                    if (response.ok) {
+                        const health = await response.json();
+                        this.logMessage(`✅ API Health: ${health.status}`);
+                        this.logMessage(`   DSLD: ${health.apis?.dsld?.status || 'unknown'}`);
+                        this.logMessage(`   IMD: ${health.apis?.imd?.status || 'unknown'}`);
+                    } else {
+                        this.logMessage(`⚠️ API Health endpoint returned: ${response.status}`);
+                    }
+                } catch (error) {
+                    this.logMessage(`❌ API Health check failed: ${error.message}`);
+                } finally {
+                    this.setButtonState('test-api-health', false, '🏥 API Health Check');
+                }
+            }
+            
+            async testPerformance() {
+                this.setButtonState('test-performance', true, 'Testing Performance...');
+                this.logMessage('📊 Running performance test...');
+                
+                try {
+                    const startTime = Date.now();
+                    const results = await window.supplementAPI.search('vitamin', {
+                        region: 'US',
+                        limit: 10
+                    });
+                    const responseTime = Date.now() - startTime;
+                    
+                    this.logMessage(`⚡ Search completed in ${responseTime}ms`);
+                    this.logMessage(`   Found ${results.length} products`);
+                    
+                    if (responseTime < 3000) {
+                        this.logMessage('✅ Performance target met (< 3 seconds)');
+                    } else {
+                        this.logMessage('⚠️ Performance target missed (≥ 3 seconds)');
+                    }
+                } catch (error) {
+                    this.logMessage(`❌ Performance test failed: ${error.message}`);
+                } finally {
+                    this.setButtonState('test-performance', false, '📊 Performance Test');
+                }
+            }
+            
+            async clearCache() {
+                this.setButtonState('clear-cache', true, 'Clearing Cache...');
+                this.logMessage('🧹 Clearing all caches...');
+                
+                try {
+                    if (window.supplementAPI && window.supplementAPI.clearCache) {
+                        await window.supplementAPI.clearCache();
+                        this.logMessage('✅ All caches cleared successfully');
+                    } else {
+                        this.logMessage('⚠️ Cache manager not available');
+                    }
+                } catch (error) {
+                    this.logMessage(`❌ Cache clearing failed: ${error.message}`);
+                } finally {
+                    this.setButtonState('clear-cache', false, '🧹 Clear Cache');
+                }
+            }
+            
+            displayResults(results) {
+                this.currentResults = results;
+                
+                // Update summary metrics
+                const summaryContainer = document.getElementById('test-summary');
+                summaryContainer.innerHTML = `
+                    <div class="metric-card">
+                        <div class="metric-value">${results.stats.total}</div>
+                        <div class="metric-label">Total Tests</div>
+                    </div>
+                    <div class="metric-card success">
+                        <div class="metric-value">${results.stats.passed}</div>
+                        <div class="metric-label">Passed</div>
+                    </div>
+                    <div class="metric-card error">
+                        <div class="metric-value">${results.stats.failed}</div>
+                        <div class="metric-label">Failed</div>
+                    </div>
+                    <div class="metric-card warning">
+                        <div class="metric-value">${results.stats.skipped}</div>
+                        <div class="metric-label">Skipped</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${results.coverage}%</div>
+                        <div class="metric-label">Success Rate</div>
+                    </div>
+                `;
+                
+                // Update detailed results
+                const detailsContainer = document.getElementById('test-details');
+                detailsContainer.innerHTML = results.results.map(test => `
+                    <div class="test-item ${test.status}">
+                        <div class="test-name">${test.name}</div>
+                        <div class="test-details">
+                            ${test.status === 'passed' ? 
+                                `✅ ${test.result} (${test.duration}ms)` : 
+                                test.status === 'failed' ? 
+                                `❌ ${test.error}` : 
+                                `⏭️ Skipped`
+                            }
+                        </div>
+                    </div>
+                `).join('');
+                
+                // Enable export button
+                document.getElementById('export-results').disabled = false;
+            }
+            
+            showResults() {
+                document.getElementById('test-results').classList.remove('hidden');
+            }
+            
+            setButtonState(buttonId, loading, text) {
+                const button = document.getElementById(buttonId);
+                button.disabled = loading;
+                
+                if (loading) {
+                    button.innerHTML = `<span class="loading-spinner"></span>${text}`;
+                } else {
+                    button.innerHTML = text;
+                }
+            }
+            
+            logMessage(message) {
+                const log = document.getElementById('test-log');
+                const timestamp = new Date().toLocaleTimeString();
+                log.textContent += `[${timestamp}] ${message}\n`;
+                log.scrollTop = log.scrollHeight;
+            }
+            
+            updateSystemInfo() {
+                const info = document.getElementById('system-info');
+                info.innerHTML = `
+                    <strong>System Information:</strong><br>
+                    User Agent: ${navigator.userAgent}<br>
+                    Screen: ${screen.width}x${screen.height}<br>
+                    Language: ${navigator.language}<br>
+                    Online: ${navigator.onLine ? 'Yes' : 'No'}<br>
+                    Timestamp: ${new Date().toISOString()}
+                `;
+            }
+            
+            async checkAPIAvailability() {
+                this.logMessage('🔍 Checking API availability...');
+                
+                // Check if APIs are initialized
+                if (window.supplementAPI) {
+                    this.logMessage('✅ Supplement API available');
+                } else {
+                    this.logMessage('⚠️ Supplement API not available');
+                }
+                
+                if (window.integrationTestSuite) {
+                    this.logMessage('✅ Test suite available');
+                } else {
+                    this.logMessage('❌ Test suite not available');
+                }
+                
+                this.logMessage('Ready to run tests.');
+            }
+            
+            exportResults() {
+                if (!this.currentResults) {
+                    alert('No test results to export');
+                    return;
+                }
+                
+                const exportData = {
+                    timestamp: new Date().toISOString(),
+                    summary: this.currentResults.stats,
+                    results: this.currentResults.results,
+                    userAgent: navigator.userAgent,
+                    url: window.location.href
+                };
+                
+                const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+                    type: 'application/json'
+                });
+                
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `my-supps-test-results-${new Date().toISOString().slice(0, 10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                this.logMessage('📄 Test results exported');
+            }
+        }
+        
+        // Initialize test runner when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.testRunner = new TestRunner();
+        });
+    </script>
+</body>
+</html>

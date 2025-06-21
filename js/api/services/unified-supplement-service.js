@@ -14,103 +14,153 @@ class UnifiedSupplementService {
             compressionEnabled: true
         });
         
+        // Enhanced error handler for robust operations
+        this.errorHandler = new APIErrorHandler({
+            maxRetries: 3,
+            retryDelay: 1000,
+            retryBackoff: 2,
+            enableFallbackData: true,
+            showUserNotifications: true
+        });
+        
+        // Performance optimizer for 3-second response target
+        this.performanceOptimizer = new PerformanceOptimizer({
+            targetResponseTime: 3000,
+            warningThreshold: 2000,
+            enableRequestCoalescing: true,
+            enablePreloading: true,
+            enablePrefetching: true,
+            maxConcurrentRequests: 6
+        });
+        
         // Legacy cache for backward compatibility
         this.cache = new Map();
         this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
         
-        console.log('🌐 Unified Supplement Service initialized with advanced caching');
+        console.log('🌐 Unified Supplement Service initialized with advanced caching and error handling');
     }
     
     async getProduct(identifier, region = 'US') {
-        try {
-            // Check advanced cache first
-            const cacheKey = CacheManager.generateKey('product', { identifier, region });
-            const cached = await this.cacheManager.get(cacheKey);
-            if (cached) {
-                console.log(`📦 Returning cached product: ${cached.name}`);
-                return cached;
-            }
-            
-            console.log(`🔍 Fetching product ${identifier} for region ${region}`);
-            
-            let product;
-            if (region === 'JP') {
-                const imdData = await this.imdClient.getProductByJAN(identifier);
-                product = IMDMapper.mapToUnified(imdData);
-            } else {
-                const dsldData = await this.dsldClient.getProductByUPC(identifier);
-                product = DSLDMapper.mapToUnified(dsldData);
-            }
-            
-            // Cache the result with smart storage strategy
-            if (product) {
-                await this.cacheManager.set(cacheKey, product, {
-                    persistent: true // Product data should be cached for longer
-                });
-            }
-            
-            return product;
-        } catch (error) {
-            console.error(`❌ Failed to get product ${identifier} for region ${region}:`, error);
-            throw error;
-        }
+        const cacheKey = CacheManager.generateKey('product', { identifier, region });
+        
+        return this.performanceOptimizer.optimizedRequest(
+            () => this.errorHandler.executeWithRetry(
+                async () => {
+                    // Check advanced cache first
+                    const cached = await this.cacheManager.get(cacheKey);
+                    if (cached) {
+                        console.log(`📦 Returning cached product: ${cached.name}`);
+                        // Trigger prefetching for related data
+                        this.performanceOptimizer.prefetchRelatedData(cached, region);
+                        return cached;
+                    }
+                    
+                    console.log(`🔍 Fetching product ${identifier} for region ${region}`);
+                    
+                    let product;
+                    if (region === 'JP') {
+                        const imdData = await this.imdClient.getProductByJAN(identifier);
+                        product = IMDMapper.mapToUnified(imdData);
+                    } else {
+                        const dsldData = await this.dsldClient.getProductByUPC(identifier);
+                        product = DSLDMapper.mapToUnified(dsldData);
+                    }
+                    
+                    // Cache the result and save as fallback
+                    if (product) {
+                        await this.cacheManager.set(cacheKey, product, {
+                            persistent: true
+                        });
+                        await this.errorHandler.saveFallbackData(`product-${region}`, [product]);
+                        
+                        // Trigger prefetching for related data
+                        this.performanceOptimizer.prefetchRelatedData(product, region);
+                    }
+                    
+                    return product;
+                },
+                {
+                    endpoint: `getProduct-${region}`,
+                    userMessage: '商品情報の取得に失敗しました。キャッシュされたデータを表示します。',
+                    timeout: 8000
+                }
+            ),
+            cacheKey,
+            { timeout: 3000 }
+        );
     }
     
     async searchProducts(query, region = 'US', options = {}) {
-        try {
-            // Check advanced cache first
-            const cacheKey = CacheManager.generateKey('search', { query, region, options });
-            const cached = await this.cacheManager.get(cacheKey);
-            if (cached) {
-                console.log(`📦 Returning cached search results for: ${query}`);
-                return cached;
-            }
-            
-            console.log(`🔍 Searching products "${query}" for region ${region}`);
-            
-            let products = [];
-            
-            if (region === 'JP') {
-                const imdResults = await this.imdClient.searchProducts(query);
-                products = IMDMapper.mapMultipleToUnified(imdResults);
-            } else {
-                const dsldResults = await this.dsldClient.searchProducts(query);
-                products = DSLDMapper.mapMultipleToUnified(dsldResults);
-            }
-            
-            // Apply any additional filters from options
-            if (options.category) {
-                products = products.filter(p => 
-                    p.category?.toLowerCase().includes(options.category.toLowerCase())
-                );
-            }
-            
-            if (options.brand) {
-                products = products.filter(p => 
-                    p.brand?.toLowerCase().includes(options.brand.toLowerCase())
-                );
-            }
-            
-            // Sort by relevance (basic implementation)
-            products = this.sortByRelevance(products, query);
-            
-            // Limit results if specified
-            if (options.limit) {
-                products = products.slice(0, options.limit);
-            }
-            
-            // Cache the results with shorter TTL for search results
-            await this.cacheManager.set(cacheKey, products, {
-                ttl: 15 * 60 * 1000 // 15 minutes for search results
-            });
-            
-            console.log(`✅ Found ${products.length} products for "${query}" in ${region}`);
-            return products;
-        } catch (error) {
-            console.error(`❌ Failed to search products "${query}" for region ${region}:`, error);
-            // Return empty array instead of throwing to allow graceful degradation
-            return [];
-        }
+        const cacheKey = CacheManager.generateKey('search', { query, region, options });
+        
+        const result = await this.performanceOptimizer.optimizedRequest(
+            () => this.errorHandler.executeWithRetry(
+                async () => {
+                    // Check advanced cache first
+                    const cached = await this.cacheManager.get(cacheKey);
+                    if (cached) {
+                        console.log(`📦 Returning cached search results for: ${query}`);
+                        return cached;
+                    }
+                    
+                    console.log(`🔍 Searching products "${query}" for region ${region}`);
+                    
+                    let products = [];
+                    
+                    if (region === 'JP') {
+                        const imdResults = await this.imdClient.searchProducts(query);
+                        products = IMDMapper.mapMultipleToUnified(imdResults);
+                    } else {
+                        const dsldResults = await this.dsldClient.searchProducts(query);
+                        products = DSLDMapper.mapMultipleToUnified(dsldResults);
+                    }
+                    
+                    // Apply any additional filters from options
+                    if (options.category) {
+                        products = products.filter(p => 
+                            p.category?.toLowerCase().includes(options.category.toLowerCase())
+                        );
+                    }
+                    
+                    if (options.brand) {
+                        products = products.filter(p => 
+                            p.brand?.toLowerCase().includes(options.brand.toLowerCase())
+                        );
+                    }
+                    
+                    // Sort by relevance (basic implementation)
+                    products = this.sortByRelevance(products, query);
+                    
+                    // Limit results if specified
+                    if (options.limit) {
+                        products = products.slice(0, options.limit);
+                    }
+                    
+                    // Cache the results and save as fallback
+                    await this.cacheManager.set(cacheKey, products, {
+                        ttl: 15 * 60 * 1000
+                    });
+                    
+                    if (products.length > 0) {
+                        await this.errorHandler.saveFallbackData(`search-${region}`, products.slice(0, 10));
+                    }
+                    
+                    console.log(`✅ Found ${products.length} products for "${query}" in ${region}`);
+                    return products;
+                },
+                {
+                    endpoint: `searchProducts-${region}`,
+                    userMessage: `「${query}」の検索に失敗しました。キャッシュされた結果を表示します。`,
+                    timeout: 10000,
+                    fallbackData: []
+                }
+            ),
+            cacheKey,
+            { timeout: 3000 }
+        );
+        
+        // Handle error handler response format
+        return result.data || result || [];
     }
     
     async getProductImage(productId, region = 'US') {
@@ -277,6 +327,34 @@ class UnifiedSupplementService {
     // Get cache statistics
     getCacheStats() {
         return this.cacheManager.getStats();
+    }
+    
+    // Get performance metrics
+    getPerformanceMetrics() {
+        return this.performanceOptimizer.getMetrics();
+    }
+    
+    // Get error statistics
+    getErrorStats() {
+        return this.errorHandler.getErrorStats();
+    }
+    
+    // Comprehensive system health check
+    async getSystemHealth() {
+        const [health, cacheStats, performanceMetrics, errorStats] = await Promise.allSettled([
+            this.healthCheck(),
+            Promise.resolve(this.getCacheStats()),
+            Promise.resolve(this.getPerformanceMetrics()),
+            Promise.resolve(this.getErrorStats())
+        ]);
+        
+        return {
+            apis: health.status === 'fulfilled' ? health.value : null,
+            cache: cacheStats.status === 'fulfilled' ? cacheStats.value : null,
+            performance: performanceMetrics.status === 'fulfilled' ? performanceMetrics.value : null,
+            errors: errorStats.status === 'fulfilled' ? errorStats.value : null,
+            timestamp: new Date().toISOString()
+        };
     }
     
     // Health check

@@ -91,13 +91,87 @@ function updateRegionInfo() {
     const regionSource = document.querySelector('.region-source');
     if (regionSource) {
         if (currentRegion === 'JP') {
-            regionSource.textContent = 'データソース: IMD 食品栄養データベース';
+            regionSource.textContent = 'データソース: IMD 食品栄養データベース (プロキシ経由)';
         } else if (currentRegion === 'MULTI') {
             regionSource.textContent = 'データソース: NIH DSLD + IMD (同時検索)';
         } else {
             regionSource.textContent = 'データソース: NIH DSLD';
         }
     }
+}
+
+// Test region switching and proxy integration
+async function testRegionSwitching() {
+    console.group('🧪 Testing Region Switching and Proxy Integration');
+    
+    try {
+        // Test US region
+        console.log('Testing US region (direct DSLD API)...');
+        changeRegionTo('US');
+        await testSearch('vitamin c', 'US');
+        
+        // Test JP region (proxy)
+        console.log('Testing JP region (IMD API via proxy)...');
+        changeRegionTo('JP');
+        await testSearch('ビタミン', 'JP');
+        
+        // Test multi-region
+        console.log('Testing multi-region search...');
+        changeRegionTo('MULTI');
+        await testSearch('calcium', 'MULTI');
+        
+        console.log('✅ All region tests completed successfully');
+        
+    } catch (error) {
+        console.error('❌ Region testing failed:', error);
+    } finally {
+        console.groupEnd();
+    }
+}
+
+async function testSearch(query, region) {
+    try {
+        const startTime = Date.now();
+        const results = await performSearch(query);
+        const responseTime = Date.now() - startTime;
+        
+        console.log(`✅ ${region} search for "${query}": ${results ? results.length : 0} results in ${responseTime}ms`);
+        
+        // Test proxy health for JP region
+        if (region === 'JP' && window.fetch) {
+            try {
+                const proxyHealth = await fetch('/api/health');
+                if (proxyHealth.ok) {
+                    const healthData = await proxyHealth.json();
+                    console.log(`🏥 Proxy health: ${healthData.apis?.imd?.status || 'unknown'}`);
+                } else {
+                    console.warn('⚠️ Proxy health check failed');
+                }
+            } catch (proxyError) {
+                console.warn('⚠️ Proxy not available:', proxyError.message);
+            }
+        }
+        
+        return results;
+        
+    } catch (error) {
+        console.error(`❌ Search failed for ${region}:`, error);
+        throw error;
+    }
+}
+
+function changeRegionTo(region) {
+    const regionSelect = document.getElementById('region-select');
+    if (regionSelect) {
+        regionSelect.value = region;
+        changeRegion(); // Trigger the region change
+        console.log(`🌍 Changed region to: ${region}`);
+    }
+}
+
+// Add global test function
+if (typeof window !== 'undefined') {
+    window.testRegionSwitching = testRegionSwitching;
 }
 
 // Show region transition animation
