@@ -5,43 +5,4 @@
   "installCommand": "",
   "outputDirectory": ".",
   "framework": null,
-  "functions": {
-    "api/imd-proxy.js": {
-      "maxDuration": 10
-    },
-    "api/health.js": {
-      "maxDuration": 15
-    }
-  },
-  "regions": ["iad1"],
-  "redirects": [
-    {
-      "source": "/api/docs",
-      "destination": "/api/health",
-      "permanent": false
-    }
-  ],
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization"
-        },
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex"
-        }
-      ]
-    }
-  ]
 }
