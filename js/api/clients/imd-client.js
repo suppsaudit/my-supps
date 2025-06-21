@@ -7,37 +7,69 @@ class IMDAPIClient {
         this.vpsEndpoint = config.vpsEndpoint;
         this.sourceIP = config.sourceIP || 'client-side';
         
-        console.log('🇯🇵 IMD API Client initialized');
+        // Use proxy for global access
+        this.useProxy = config.useProxy !== false; // Default to true
+        this.proxyURL = config.proxyURL || '/api/imd-proxy';
+        
+        console.log('🇯🇵 IMD API Client initialized', this.useProxy ? '(via proxy)' : '(direct)');
     }
     
     async searchProducts(query) {
         try {
             console.log(`🔍 Searching IMD for: ${query}`);
             
-            const response = await fetch(`${this.baseURL}/search`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.apiKey}`,
-                    'Source-IP': this.getSourceIP()
-                },
-                body: JSON.stringify({
-                    query: query,
-                    search_type: 'comprehensive',
-                    include_images: true,
-                    include_nutrition: true,
-                    max_results: 50
-                })
-            });
+            let url, requestOptions;
+            
+            if (this.useProxy) {
+                // Use Vercel proxy for global access
+                url = `${this.proxyURL}?endpoint=search`;
+                requestOptions = {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        search_type: 'comprehensive',
+                        include_images: true,
+                        include_nutrition: true,
+                        max_results: 50
+                    })
+                };
+            } else {
+                // Direct API call
+                url = `${this.baseURL}/search`;
+                requestOptions = {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${this.apiKey}`,
+                        'Source-IP': this.getSourceIP()
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        search_type: 'comprehensive',
+                        include_images: true,
+                        include_nutrition: true,
+                        max_results: 50
+                    })
+                };
+            }
+            
+            const response = await fetch(url, requestOptions);
             
             if (!response.ok) {
                 throw new Error(`IMD API Error: ${response.status} ${response.statusText}`);
             }
             
             const data = await response.json();
-            console.log(`✅ IMD search returned ${data.results?.length || 0} results`);
             
-            return data.results || [];
+            // Handle proxy response format
+            const results = this.useProxy ? data.data?.results || data.data || [] : data.results || [];
+            
+            console.log(`✅ IMD search returned ${results.length || 0} results`);
+            
+            return results;
         } catch (error) {
             console.error('❌ IMD search error:', error);
             // Return empty array instead of throwing to allow fallback
@@ -49,21 +81,42 @@ class IMDAPIClient {
         try {
             console.log(`📦 Fetching IMD product by JAN: ${janCode}`);
             
-            const response = await fetch(`${this.baseURL}/product/jan/${janCode}`, {
-                headers: {
-                    'Authorization': `Bearer ${this.apiKey}`,
-                    'Source-IP': this.getSourceIP()
-                }
-            });
+            let url, requestOptions;
+            
+            if (this.useProxy) {
+                // Use Vercel proxy for global access
+                url = `${this.proxyURL}?endpoint=barcode&code=${janCode}`;
+                requestOptions = {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                };
+            } else {
+                // Direct API call
+                url = `${this.baseURL}/product/jan/${janCode}`;
+                requestOptions = {
+                    headers: {
+                        'Authorization': `Bearer ${this.apiKey}`,
+                        'Source-IP': this.getSourceIP()
+                    }
+                };
+            }
+            
+            const response = await fetch(url, requestOptions);
             
             if (!response.ok) {
                 throw new Error(`IMD API Error: ${response.status} ${response.statusText}`);
             }
             
             const data = await response.json();
-            console.log(`✅ IMD product found: ${data.名称}`);
             
-            return data;
+            // Handle proxy response format
+            const productData = this.useProxy ? data.data : data;
+            
+            console.log(`✅ IMD product found: ${productData.名称 || productData.name}`);
+            
+            return productData;
         } catch (error) {
             console.error('❌ IMD product fetch error:', error);
             throw error;

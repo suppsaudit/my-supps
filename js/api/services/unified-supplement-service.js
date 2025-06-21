@@ -5,18 +5,27 @@ class UnifiedSupplementService {
         this.dsldClient = dsldClient;
         this.imdClient = imdClient;
         
-        // Cache for performance optimization
+        // Advanced cache manager for cost reduction
+        this.cacheManager = new CacheManager({
+            memoryMaxSize: 200,
+            memoryTTL: 10 * 60 * 1000, // 10 minutes
+            localStorageTTL: 2 * 60 * 60 * 1000, // 2 hours
+            indexedDBTTL: 24 * 60 * 60 * 1000, // 24 hours
+            compressionEnabled: true
+        });
+        
+        // Legacy cache for backward compatibility
         this.cache = new Map();
         this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
         
-        console.log('🌐 Unified Supplement Service initialized');
+        console.log('🌐 Unified Supplement Service initialized with advanced caching');
     }
     
     async getProduct(identifier, region = 'US') {
         try {
-            // Check cache first
-            const cacheKey = `${region}:${identifier}`;
-            const cached = this.getFromCache(cacheKey);
+            // Check advanced cache first
+            const cacheKey = CacheManager.generateKey('product', { identifier, region });
+            const cached = await this.cacheManager.get(cacheKey);
             if (cached) {
                 console.log(`📦 Returning cached product: ${cached.name}`);
                 return cached;
@@ -33,9 +42,11 @@ class UnifiedSupplementService {
                 product = DSLDMapper.mapToUnified(dsldData);
             }
             
-            // Cache the result
+            // Cache the result with smart storage strategy
             if (product) {
-                this.setCache(cacheKey, product);
+                await this.cacheManager.set(cacheKey, product, {
+                    persistent: true // Product data should be cached for longer
+                });
             }
             
             return product;
@@ -47,9 +58,9 @@ class UnifiedSupplementService {
     
     async searchProducts(query, region = 'US', options = {}) {
         try {
-            // Check cache first
-            const cacheKey = `search:${region}:${query}:${JSON.stringify(options)}`;
-            const cached = this.getFromCache(cacheKey);
+            // Check advanced cache first
+            const cacheKey = CacheManager.generateKey('search', { query, region, options });
+            const cached = await this.cacheManager.get(cacheKey);
             if (cached) {
                 console.log(`📦 Returning cached search results for: ${query}`);
                 return cached;
@@ -88,8 +99,10 @@ class UnifiedSupplementService {
                 products = products.slice(0, options.limit);
             }
             
-            // Cache the results
-            this.setCache(cacheKey, products);
+            // Cache the results with shorter TTL for search results
+            await this.cacheManager.set(cacheKey, products, {
+                ttl: 15 * 60 * 1000 // 15 minutes for search results
+            });
             
             console.log(`✅ Found ${products.length} products for "${query}" in ${region}`);
             return products;
@@ -161,8 +174,8 @@ class UnifiedSupplementService {
     // Get popular products by region
     async getPopularProducts(region = 'US', limit = 20) {
         try {
-            const cacheKey = `popular:${region}:${limit}`;
-            const cached = this.getFromCache(cacheKey);
+            const cacheKey = CacheManager.generateKey('popular', { region, limit });
+            const cached = await this.cacheManager.get(cacheKey);
             if (cached) {
                 return cached;
             }
@@ -185,7 +198,11 @@ class UnifiedSupplementService {
             // Remove duplicates and limit
             const uniqueProducts = this.removeDuplicates(allProducts).slice(0, limit);
             
-            this.setCache(cacheKey, uniqueProducts);
+            // Cache popular products for longer (4 hours)
+            await this.cacheManager.set(cacheKey, uniqueProducts, {
+                ttl: 4 * 60 * 60 * 1000,
+                persistent: true
+            });
             
             return uniqueProducts;
         } catch (error) {
@@ -250,9 +267,16 @@ class UnifiedSupplementService {
         });
     }
     
-    clearCache() {
+    async clearCache() {
+        // Clear both legacy and advanced cache
         this.cache.clear();
-        console.log('🧹 Cache cleared');
+        await this.cacheManager.clear();
+        console.log('🧹 All caches cleared');
+    }
+    
+    // Get cache statistics
+    getCacheStats() {
+        return this.cacheManager.getStats();
     }
     
     // Health check

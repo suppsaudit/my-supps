@@ -10,7 +10,9 @@ const apiConfig = {
         baseURL: window.config?.APIS?.IMD_API_URL || 'https://api.imd.jp/fdb',
         apiKey: window.config?.APIS?.IMD_API_KEY || '',
         vpsEndpoint: window.config?.APIS?.IMD_VPS_ENDPOINT || '',
-        sourceIP: 'client-side' // Will be handled by server proxy
+        sourceIP: 'client-side', // Will be handled by server proxy
+        useProxy: true, // Enable proxy for global access
+        proxyURL: '/api/imd-proxy' // Vercel API route
     }
 };
 
