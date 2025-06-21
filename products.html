@@ -87,6 +87,18 @@
             </div>
 
             <div class="filters-section">
+                <!-- Region Selection -->
+                <div class="region-selector">
+                    <label for="region-select">地域:</label>
+                    <select id="region-select" class="region-select" onchange="changeRegion()">
+                        <option value="US">🇺🇸 米国 (DSLD)</option>
+                        <option value="JP">🇯🇵 日本 (IMD)</option>
+                    </select>
+                    <div class="region-info" id="region-info">
+                        <span class="region-source">データソース: NIH DSLD</span>
+                    </div>
+                </div>
+                
                 <div class="search-bar">
                     <div class="search-input-group">
                         <select id="search-type" class="search-type-select">
@@ -158,6 +170,15 @@
         </footer>
     </div>
 
+    <!-- Unified API Integration -->
+    <script src="js/api/interfaces.js"></script>
+    <script src="js/api/config.js"></script>
+    <script src="js/api/clients/imd-client.js"></script>
+    <script src="js/api/mappers/imd-mapper.js"></script>
+    <script src="js/api/mappers/dsld-mapper.js"></script>
+    <script src="js/api/services/unified-supplement-service.js"></script>
+    <script src="js/api/index.js"></script>
+    
     <script src="js/navigation.js"></script>
     <script src="js/supabase-client.js"></script>
     <script src="js/user-avatar.js"></script>

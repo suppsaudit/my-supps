@@ -1,4 +1,85 @@
-/* Products Page Styles - DSLD Integration */
+/* Products Page Styles - Unified API Integration */
+
+/* Region Selector */
+.region-selector {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--background-card);
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    box-shadow: var(--shadow-card);
+    margin-bottom: 1.5rem;
+    border: 2px solid var(--border-light);
+    transition: border-color 0.3s ease;
+}
+
+.region-selector:hover {
+    border-color: var(--primary-color);
+}
+
+.region-selector label {
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 40px;
+}
+
+.region-select {
+    background: var(--background-main);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+    min-width: 180px;
+}
+
+.region-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.1);
+}
+
+.region-info {
+    margin-left: auto;
+}
+
+.region-source {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    padding: 0.25rem 0.75rem;
+    background: var(--background-light);
+    border-radius: 20px;
+    border: 1px solid var(--border-light);
+}
+
+/* Region transition animation */
+.region-switching {
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
+}
+
+.region-changed {
+    border-color: #10B981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Mobile region selector */
+@media (max-width: 768px) {
+    .region-selector {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+        padding: 1rem;
+    }
+    
+    .region-info {
+        margin-left: 0;
+        text-align: center;
+    }
+}
 
 .products-page {
     padding: 2rem 0;

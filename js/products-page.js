@@ -1,5 +1,5 @@
-// Products Page JavaScript - DSLD Integration
-// Scientific supplement database with NIH DSLD data
+// Products Page JavaScript - Unified API Integration
+// Scientific supplement database with NIH DSLD and IMD data
 
 let allProducts = [];
 let filteredProducts = [];
@@ -7,9 +7,15 @@ let currentPage = 1;
 let productsPerPage = 20;
 let currentUser = null;
 let currentFilter = 'all';
+let currentRegion = 'US';
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', async () => {
+    // Wait for unified API initialization
+    if (window.supplementAPI) {
+        await window.supplementAPI.initialize();
+    }
+    
     // Supabaseクライアントの初期化を待つ
     let attempts = 0;
     while ((!window.supabaseClient && !window.isDemo) && attempts < 50) {
@@ -27,6 +33,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.isDemo = true;
     }
     
+    // Initialize region
+    currentRegion = window.supplementAPI?.getCurrentRegion() || 'US';
+    initializeRegionSelector();
+    
     currentUser = await checkAuth();
     console.log('Products page - Current user:', currentUser);
     updateUserMenu();
@@ -41,13 +51,121 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupPagination();
 });
 
-// Load products from DSLD or mock data
+// Initialize region selector
+function initializeRegionSelector() {
+    const regionSelect = document.getElementById('region-select');
+    const regionInfo = document.getElementById('region-info');
+    
+    if (regionSelect) {
+        regionSelect.value = currentRegion;
+        updateRegionInfo();
+    }
+}
+
+// Change region function
+function changeRegion() {
+    const regionSelect = document.getElementById('region-select');
+    const newRegion = regionSelect.value;
+    
+    if (newRegion !== currentRegion) {
+        currentRegion = newRegion;
+        
+        // Update API region
+        if (window.supplementAPI) {
+            window.supplementAPI.setRegion(newRegion);
+        }
+        
+        // Update UI
+        updateRegionInfo();
+        showRegionTransition();
+        
+        // Reload products for new region
+        loadProducts();
+        
+        console.log(`🌍 Region changed to: ${newRegion}`);
+    }
+}
+
+// Update region info display
+function updateRegionInfo() {
+    const regionSource = document.querySelector('.region-source');
+    if (regionSource) {
+        if (currentRegion === 'JP') {
+            regionSource.textContent = 'データソース: IMD 食品栄養データベース';
+        } else {
+            regionSource.textContent = 'データソース: NIH DSLD';
+        }
+    }
+}
+
+// Show region transition animation
+function showRegionTransition() {
+    const regionSelector = document.querySelector('.region-selector');
+    const productsGrid = document.getElementById('products-grid');
+    
+    if (regionSelector) {
+        regionSelector.classList.add('region-switching');
+        setTimeout(() => {
+            regionSelector.classList.remove('region-switching');
+            regionSelector.classList.add('region-changed');
+            setTimeout(() => {
+                regionSelector.classList.remove('region-changed');
+            }, 1000);
+        }, 300);
+    }
+    
+    if (productsGrid) {
+        productsGrid.style.opacity = '0.5';
+        setTimeout(() => {
+            productsGrid.style.opacity = '1';
+        }, 500);
+    }
+}
+
+// Make functions globally available
+window.changeRegion = changeRegion;
+
+// Load products from Unified API
 async function loadProducts() {
     try {
         showLoadingState();
         
-        // Load products from actual DSLD API
-        if (window.dsldApi) {
+        console.log(`🔍 Loading products for region: ${currentRegion}`);
+        
+        // Load popular products using unified API
+        if (window.supplementAPI) {
+            try {
+                allProducts = await window.supplementAPI.getPopular(50);
+                console.log(`✅ Loaded ${allProducts.length} products from unified API (${currentRegion})`);
+            } catch (error) {
+                console.error('❌ Unified API failed, trying fallback:', error);
+                allProducts = await loadProductsFallback();
+            }
+        } else {
+            console.log('⚠️ Unified API not available, using fallback');
+            allProducts = await loadProductsFallback();
+        }
+        
+        if (allProducts.length === 0) {
+            console.log('🔧 No products loaded, creating demo data');
+            allProducts = createDemoProducts();
+        }
+        
+        filteredProducts = [...allProducts];
+        hideLoadingState();
+        
+    } catch (error) {
+        console.error('❌ Error loading products:', error);
+        hideLoadingState();
+        allProducts = createDemoProducts();
+        filteredProducts = [...allProducts];
+    }
+}
+
+// Fallback product loading
+async function loadProductsFallback() {
+    // Load products from actual DSLD API if available
+    if (currentRegion === 'US' && window.dsldApi) {
             try {
                 console.log('🔍 Loading products from NIH DSLD API...');
                 
