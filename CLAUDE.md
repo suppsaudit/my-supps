@@ -747,6 +747,105 @@ ALTER TABLE user_intake_schedules ADD COLUMN total_times INTEGER;
 - config.js の全ページ読み込み
 - HTTP server必須（file://プロトコル制限回避）
 
+## Implementation Status & Roadmap (Updated 2025-06-21)
+
+### ✅ Completed Features (Phase 1-3)
+
+#### Phase 1: Core Functionality ✅
+- [x] Static HTML/CSS/JavaScript architecture
+- [x] NIH DSLD API integration 
+- [x] Supabase database setup with RLS
+- [x] User authentication (Email/Password)
+- [x] MY SUPPS management
+- [x] Supplement search and filtering
+- [x] Radar chart visualization (Chart.js)
+- [x] Mobile-responsive design
+
+#### Phase 2: Japanese Market Integration ✅
+- [x] Unified Supplement API architecture
+- [x] IMD (Japan) API integration planning
+- [x] Multi-region data structure
+- [x] Region switching UI (US/JP/MULTI)
+- [x] Brand mapping for cross-market products
+
+#### Phase 3: Global Accessibility & Performance ✅
+- [x] API proxy server implementation (Vercel Edge Functions)
+- [x] Multi-layer caching strategy (Memory/localStorage/IndexedDB)
+- [x] Request coalescing and deduplication
+- [x] Error handling with exponential backoff
+- [x] Fallback data for offline functionality
+- [x] Performance optimization (3-second target)
+- [x] Comprehensive test suite with web UI
+- [x] Brand normalizer with 100+ mappings
+- [x] Enhanced manufacturer/brand search
+
+### 🚧 In Progress Features
+
+#### Barcode Scanner Integration
+**Status**: Planning
+**Requirement**: HTTPS environment required
+**Prerequisites**: 
+- [ ] Production domain setup (HTTPS)
+- [ ] SSL certificate configuration
+**Implementation Plan**:
+- QuaggaJS or ZXing-js library integration
+- Camera API with MediaDevices.getUserMedia()
+- UPC/EAN barcode recognition
+- DSLD API barcode search endpoint
+- Mobile-optimized scanner UI
+
+### 📋 Upcoming Features (Prioritized)
+
+1. **Production Environment Setup** (Required for barcode)
+   - [ ] Custom domain configuration
+   - [ ] HTTPS/SSL setup
+   - [ ] CDN configuration
+   - [ ] Production database migration
+
+2. **Barcode Scanner** (After HTTPS setup)
+   - [ ] Camera permission handling
+   - [ ] Real-time barcode detection
+   - [ ] Product search by UPC/EAN
+   - [ ] Fallback to manual entry
+   - [ ] Scanner UI/UX optimization
+
+3. **Advanced Features**
+   - [ ] Google SSO authentication
+   - [ ] Intake schedule automation
+   - [ ] Nutrient interaction warnings
+   - [ ] Export functionality (CSV/PDF)
+   - [ ] Native mobile app development
+
+### 🔧 Technical Debt & Improvements
+- [ ] Vercel API functions deployment (Pro plan consideration)
+- [ ] IMD API credentials and integration
+- [ ] Comprehensive E2E testing
+- [ ] Performance monitoring setup
+- [ ] Analytics integration
+
+### 📊 Deployment Status
+
+| Environment | URL | Status | Latest Commit | Notes |
+|------------|-----|--------|---------------|-------|
+| GitHub Pages | https://suppsaudit.github.io/my-supps/ | ✅ Active | 35b384f | Full functionality |
+| Vercel | https://my-supps.vercel.app/ | ⚠️ Limited | 35b384f | Static only (API functions disabled) |
+| Production | TBD | 🔄 Pending | - | Requires domain setup |
+
+### 🚀 Quick Development Commands
+```bash
+# Local development
+python3 -m http.server 3000
+
+# Test suite
+open http://localhost:3000/test-runner.html
+
+# Deploy to GitHub Pages
+git add . && git commit -m "Update" && git push origin main
+
+# Deploy to Vercel (currently limited)
+vercel deploy --prod
+```
+
 ## Design Requirements (Updated 2025-06-20)
 
 ### TODAY'S SCHEDULE Design Specifications
