@@ -13,7 +13,7 @@
       "maxDuration": 15
     }
   },
-  "regions": ["hnd1", "iad1", "sfo1"],
+  "regions": ["iad1"],
   "env": {
     "IMD_API_URL": "@imd-api-url",
     "IMD_API_KEY": "@imd-api-key"
