@@ -147,6 +147,34 @@ class IntegrationTestSuite {
             
             return `US: ${usResults.length}, JP: ${jpResults.length} products`;
         });
+        
+        await this.runTest('Brand Search Enhancement', async () => {
+            if (!window.BrandNormalizer) {
+                this.log('⚠️ BrandNormalizer not available, skipping brand tests');
+                this.testStats.skipped++;
+                return 'Skipped - BrandNormalizer not available';
+            }
+            
+            const brandNormalizer = new window.BrandNormalizer();
+            
+            // Test brand normalization
+            const normalizedBrand = brandNormalizer.normalizeBrandName("nature's way");
+            this.assert(normalizedBrand, 'Should normalize brand name');
+            
+            // Test brand suggestions
+            const suggestions = brandNormalizer.getBrandSuggestions('nature', 5);
+            this.assert(Array.isArray(suggestions), 'Should return array of suggestions');
+            
+            // Test brand matching
+            const testProduct = {
+                brand: "Nature's Way",
+                name_en: "Vitamin C 1000mg"
+            };
+            const matches = brandNormalizer.matchesBrandSearch(testProduct, 'natures way');
+            this.assert(matches === true, 'Should match brand variations');
+            
+            return `Brand normalizer working with ${suggestions.length} suggestions`;
+        });
     }
     
     // === CACHE TESTS ===

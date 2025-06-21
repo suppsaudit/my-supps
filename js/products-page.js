@@ -9,6 +9,9 @@ let currentUser = null;
 let currentFilter = 'all';
 let currentRegion = 'US';
 
+// Initialize brand normalizer
+let brandNormalizer = null;
+
 // Initialize page
 document.addEventListener('DOMContentLoaded', async () => {
     // Wait for unified API initialization
@@ -33,6 +36,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.isDemo = true;
     }
     
+    // Initialize brand normalizer
+    brandNormalizer = new BrandNormalizer();
+    console.log('🏷️ Brand normalizer initialized');
+    
     // Initialize region
     currentRegion = window.supplementAPI?.getCurrentRegion() || 'US';
     initializeRegionSelector();
@@ -46,6 +53,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('🔍 Debug: allProducts count:', allProducts.length);
     console.log('🔍 Debug: first 3 products:', allProducts.slice(0, 3));
     setupSearchInput();
+    setupBrandSuggestions(); // Add brand suggestions
     updateStats();
     displayProducts();
     setupPagination();
@@ -319,12 +327,19 @@ async function loadProductsFallback() {
                     
                     allProducts = allDsldProducts.map((hit, index) => {
                         const product = hit._source;
+                        
+                        // Enhanced brand extraction and normalization
+                        const enhancedBrand = brandNormalizer ? 
+                            brandNormalizer.extractBrandFromProduct(product) : 
+                            (product.brand_name || product.manufacturer || 'Unknown Brand');
+                        
                         return {
                             id: (index + 1).toString(),
                             dsld_id: product.dsld_id || product.id,
                             name_en: product.product_name || product.name,
                             name_ja: translateProductName(product.product_name || product.name),
-                            brand: product.brand_name || product.manufacturer || 'Unknown Brand',
+                            brand: enhancedBrand,
+                            brand_normalized: brandNormalizer ? brandNormalizer.normalizeBrandName(enhancedBrand) : enhancedBrand,
                             category: categorizeProduct(product.product_name || product.name),
                             serving_form: product.serving_form || 'capsule',
                             serving_size: product.serving_size || '1 capsule',
@@ -1282,12 +1297,21 @@ function performLocalSearch(searchTerm, searchType) {
     const searchTermLower = searchTerm.toLowerCase();
         
         filteredProducts = allProducts.filter(product => {
-            // For 'all' search type, search in all fields
+            // For 'all' search type, search in all fields with enhanced brand matching
             if (searchType === 'all') {
+                // Enhanced brand matching for 'all' search
+                const brandMatch = brandNormalizer ? 
+                    brandNormalizer.matchesBrandSearch(product, searchTerm) : 
+                    (product.brand || '').toLowerCase().includes(searchTermLower);
+                
+                if (brandMatch) {
+                    return true;
+                }
+                
+                // Traditional text search in other fields
                 const searchableText = [
                     product.name_en || '',
                     product.name_ja || '',
-                    product.brand || '',
                     product.category || '',
                     ...(product.nutrients || []).map(n => n.name_ja || '')
                 ].join(' ').toLowerCase();
@@ -1305,10 +1329,27 @@ function performLocalSearch(searchTerm, searchType) {
                 matches = productNameEn.includes(searchTermLower) || productNameJa.includes(searchTermLower);
             }
             
-            // Search in brand
+            // Enhanced brand search with normalizer
             else if (searchType === 'brand') {
-                const brand = (product.brand || '').toLowerCase();
-                matches = brand.includes(searchTermLower);
+                if (brandNormalizer) {
+                    // Use intelligent brand matching
+                    matches = brandNormalizer.matchesBrandSearch(product, searchTerm);
+                    
+                    // Debug logging for brand search
+                    if (matches) {
+                        console.log(`🏷️ Brand match found: "${searchTerm}" matches "${product.brand}" (normalized: "${product.brand_normalized}")`);
+                    }
+                } else {
+                    // Fallback to enhanced string matching
+                    const brand = (product.brand || '').toLowerCase();
+                    const brandNormalized = (product.brand_normalized || '').toLowerCase();
+                    
+                    // Try multiple matching strategies
+                    matches = brand.includes(searchTermLower) || 
+                             brandNormalized.includes(searchTermLower) ||
+                             searchTermLower.includes(brand) ||
+                             fuzzyBrandMatch(brand, searchTermLower);
+                }
             }
             
             // Search in ingredients/nutrients
@@ -1316,7 +1357,8 @@ function performLocalSearch(searchTerm, searchType) {
                 if (product.nutrients && Array.isArray(product.nutrients)) {
                     matches = product.nutrients.some(nutrient => {
                         const nutrientName = (nutrient.name_ja || '').toLowerCase();
-                        return nutrientName.includes(searchTermLower);
+                        const nutrientNameEn = (nutrient.name_en || '').toLowerCase();
+                        return nutrientName.includes(searchTermLower) || nutrientNameEn.includes(searchTermLower);
                     });
                 }
             }
@@ -1324,8 +1366,21 @@ function performLocalSearch(searchTerm, searchType) {
             return matches;
         });
         
-        console.log('🔍 Search results:', { searchTerm, searchType, resultsCount: filteredProducts.length });
-        console.log('🔍 Sample search result:', filteredProducts[0]);
+        // Enhanced logging with brand information
+        console.log('🔍 Enhanced search results:', { 
+            searchTerm, 
+            searchType, 
+            resultsCount: filteredProducts.length,
+            brandSuggestions: brandNormalizer ? brandNormalizer.getBrandSuggestions(searchTerm, 5) : []
+        });
+        
+        if (filteredProducts.length > 0) {
+            console.log('🔍 Sample search result:', {
+                name: filteredProducts[0].name_en,
+                brand: filteredProducts[0].brand,
+                brand_normalized: filteredProducts[0].brand_normalized
+            });
+        }
         
         currentPage = 1;
         displayProducts();
@@ -1688,5 +1743,119 @@ function updateUserMenu() {
         userMenu.innerHTML = `
             <a href="auth.html" class="login-btn">ログイン</a>
         `;
+    }
+}
+
+// Fuzzy brand matching fallback function
+function fuzzyBrandMatch(brand1, brand2) {
+    if (!brand1 || !brand2) return false;
+    
+    // Remove common words and punctuation
+    const cleanBrand1 = brand1.replace(/[''`]/g, '').replace(/\s+/g, ' ').trim();
+    const cleanBrand2 = brand2.replace(/[''`]/g, '').replace(/\s+/g, ' ').trim();
+    
+    // Check if words match partially
+    const words1 = cleanBrand1.split(' ');
+    const words2 = cleanBrand2.split(' ');
+    
+    // If any word from brand2 is found in brand1 (for partial matches)
+    return words2.some(word2 => 
+        word2.length >= 3 && words1.some(word1 => 
+            word1.includes(word2) || word2.includes(word1)
+        )
+    );
+}
+
+// Add brand suggestion functionality to search input
+function setupBrandSuggestions() {
+    const searchInput = document.getElementById('search-input');
+    const searchTypeSelect = document.getElementById('search-type');
+    
+    if (!searchInput || !searchTypeSelect || !brandNormalizer) return;
+    
+    // Create suggestions dropdown
+    let suggestionsDropdown = document.getElementById('brand-suggestions');
+    if (!suggestionsDropdown) {
+        suggestionsDropdown = document.createElement('div');
+        suggestionsDropdown.id = 'brand-suggestions';
+        suggestionsDropdown.className = 'brand-suggestions-dropdown';
+        suggestionsDropdown.style.cssText = `
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        `;
+        
+        // Position relative to search input
+        const searchGroup = searchInput.closest('.search-input-group');
+        if (searchGroup) {
+            searchGroup.style.position = 'relative';
+            searchGroup.appendChild(suggestionsDropdown);
+        }
+    }
+    
+    // Show brand suggestions when typing in brand search mode
+    searchInput.addEventListener('input', () => {
+        const searchType = searchTypeSelect.value;
+        const query = searchInput.value.trim();
+        
+        if (searchType === 'brand' && query.length >= 2) {
+            const suggestions = brandNormalizer.getBrandSuggestions(query, 8);
+            showBrandSuggestions(suggestions, suggestionsDropdown, searchInput);
+        } else {
+            hideBrandSuggestions(suggestionsDropdown);
+        }
+    });
+    
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-input-group')) {
+            hideBrandSuggestions(suggestionsDropdown);
+        }
+    });
+}
+
+function showBrandSuggestions(suggestions, dropdown, searchInput) {
+    if (suggestions.length === 0) {
+        hideBrandSuggestions(dropdown);
+        return;
+    }
+    
+    dropdown.innerHTML = suggestions.map(brand => `
+        <div class="brand-suggestion-item" 
+             style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;"
+             onmouseover="this.style.backgroundColor='#f5f5f5'"
+             onmouseout="this.style.backgroundColor='white'"
+             onclick="selectBrandSuggestion('${brand}', '${searchInput.id}')">
+            🏷️ ${brand}
+        </div>
+    `).join('');
+    
+    dropdown.style.display = 'block';
+}
+
+function hideBrandSuggestions(dropdown) {
+    dropdown.style.display = 'none';
+}
+
+function selectBrandSuggestion(brand, inputId) {
+    const searchInput = document.getElementById(inputId);
+    if (searchInput) {
+        searchInput.value = brand;
+        performSearch(); // Trigger search
+    }
+    
+    const dropdown = document.getElementById('brand-suggestions');
+    if (dropdown) {
+        hideBrandSuggestions(dropdown);
     }
 }
