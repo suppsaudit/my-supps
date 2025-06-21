@@ -89,10 +89,11 @@
             <div class="filters-section">
                 <!-- Region Selection -->
                 <div class="region-selector">
-                    <label for="region-select">地域:</label>
+                    <label for="region-select">検索対象:</label>
                     <select id="region-select" class="region-select" onchange="changeRegion()">
-                        <option value="US">🇺🇸 米国 (DSLD)</option>
-                        <option value="JP">🇯🇵 日本 (IMD)</option>
+                        <option value="US">🇺🇸 米国のみ (DSLD)</option>
+                        <option value="JP">🇯🇵 日本のみ (IMD)</option>
+                        <option value="MULTI">🌍 両方同時検索</option>
                     </select>
                     <div class="region-info" id="region-info">
                         <span class="region-source">データソース: NIH DSLD</span>

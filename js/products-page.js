@@ -92,6 +92,8 @@ function updateRegionInfo() {
     if (regionSource) {
         if (currentRegion === 'JP') {
             regionSource.textContent = 'データソース: IMD 食品栄養データベース';
+        } else if (currentRegion === 'MULTI') {
+            regionSource.textContent = 'データソース: NIH DSLD + IMD (同時検索)';
         } else {
             regionSource.textContent = 'データソース: NIH DSLD';
         }
@@ -122,6 +124,20 @@ function showRegionTransition() {
     }
 }
 
+// Remove duplicate products across regions
+function removeDuplicateProducts(products) {
+    const seen = new Set();
+    return products.filter(product => {
+        // Create unique key based on name and brand
+        const key = `${product.name}-${product.brand}`.toLowerCase();
+        if (seen.has(key)) {
+            return false;
+        }
+        seen.add(key);
+        return true;
+    });
+}
+
 // Make functions globally available
 window.changeRegion = changeRegion;
 
@@ -135,7 +151,23 @@ async function loadProducts() {
         // Load popular products using unified API
         if (window.supplementAPI) {
             try {
-                allProducts = await window.supplementAPI.getPopular(50);
+                if (currentRegion === 'MULTI') {
+                    // Load from both regions
+                    console.log('🌍 Loading products from both regions...');
+                    const [usProducts, jpProducts] = await Promise.allSettled([
+                        window.supplementAPI.getPopular(25), // US products
+                        window.supplementAPI.getPopular(25)  // JP products (will be handled by API)
+                    ]);
+                    
+                    allProducts = [];
+                    if (usProducts.status === 'fulfilled') allProducts.push(...usProducts.value);
+                    if (jpProducts.status === 'fulfilled') allProducts.push(...jpProducts.value);
+                    
+                    // Remove duplicates
+                    allProducts = removeDuplicateProducts(allProducts);
+                } else {
+                    allProducts = await window.supplementAPI.getPopular(50);
+                }
                 console.log(`✅ Loaded ${allProducts.length} products from unified API (${currentRegion})`);
             } catch (error) {
                 console.error('❌ Unified API failed, trying fallback:', error);
@@ -1114,7 +1146,7 @@ async function performSearch() {
     const searchTerm = document.getElementById('search-input').value.trim();
     const searchType = document.getElementById('search-type').value;
     
-    console.log('Performing search:', { searchTerm, searchType, totalProducts: allProducts.length });
+    console.log('Performing search:', { searchTerm, searchType, region: currentRegion, totalProducts: allProducts.length });
     
     if (!searchTerm) {
         filteredProducts = [...allProducts];
@@ -1126,8 +1158,54 @@ async function performSearch() {
     }
     
     try {
-        // Always use demo mode search since we're in development
-        const searchTermLower = searchTerm.toLowerCase();
+        showLoadingState();
+        
+        // Use unified API for search if available
+        if (window.supplementAPI && window.unifiedSupplementAPI) {
+            let searchResults = [];
+            
+            if (currentRegion === 'MULTI') {
+                // Multi-region search
+                console.log('🌍 Performing multi-region search...');
+                searchResults = await window.unifiedSupplementAPI.searchMultiRegion(searchTerm, {
+                    limit: 50
+                });
+            } else {
+                // Single region search
+                searchResults = await window.supplementAPI.search(searchTerm, {
+                    region: currentRegion,
+                    limit: 50
+                });
+            }
+            
+            if (searchResults.length > 0) {
+                filteredProducts = searchResults;
+                console.log(`✅ API search returned ${searchResults.length} results`);
+            } else {
+                console.log('⚠️ API search returned no results, using local search');
+                performLocalSearch(searchTerm, searchType);
+            }
+        } else {
+            console.log('⚠️ Unified API not available, using local search');
+            performLocalSearch(searchTerm, searchType);
+        }
+        
+        hideLoadingState();
+        currentPage = 1;
+        displayProducts();
+        setupPagination();
+        updateStats();
+        
+    } catch (error) {
+        console.error('❌ Search error:', error);
+        hideLoadingState();
+        performLocalSearch(searchTerm, searchType);
+    }
+}
+
+// Local search fallback
+function performLocalSearch(searchTerm, searchType) {
+    const searchTermLower = searchTerm.toLowerCase();
         
         filteredProducts = allProducts.filter(product => {
             // For 'all' search type, search in all fields
