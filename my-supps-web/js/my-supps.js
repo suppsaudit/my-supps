@@ -662,3 +662,55 @@ document.addEventListener('click', (e) => {
         document.getElementById('search-suggestions').style.display = 'none';
     }
 });
+
+// QuaggaJSの読み込み
+let quaggaLoaded = false;
+function loadQuagga(callback) {
+    if (quaggaLoaded) return callback();
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/quagga@0.12.1/dist/quagga.min.js';
+    script.onload = () => { quaggaLoaded = true; callback(); };
+    document.head.appendChild(script);
+}
+
+// バーコードモーダルの開閉
+window.closeBarcodeModal = function() {
+    document.getElementById('barcode-modal').style.display = 'none';
+    if (window.Quagga) window.Quagga.stop();
+};
+
+function openBarcodeModal() {
+    document.getElementById('barcode-modal').style.display = 'flex';
+    document.getElementById('barcode-result').textContent = '';
+    loadQuagga(() => {
+        window.Quagga.init({
+            inputStream: {
+                name: 'Live',
+                type: 'LiveStream',
+                target: document.getElementById('barcode-scanner'),
+                constraints: { facingMode: 'environment' }
+            },
+            decoder: { readers: ['ean_reader', 'ean_8_reader', 'upc_reader', 'upc_e_reader', 'code_128_reader'] }
+        }, err => {
+            if (err) {
+                document.getElementById('barcode-result').textContent = 'カメラの起動に失敗しました: ' + err;
+                return;
+            }
+            window.Quagga.start();
+        });
+        window.Quagga.onDetected(data => {
+            const code = data.codeResult.code;
+            document.getElementById('barcode-result').textContent = 'バーコード検出: ' + code;
+            document.getElementById('supplement-search').value = code;
+            closeBarcodeModal();
+            searchSupplements();
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const barcodeBtn = document.getElementById('barcode-btn');
+    if (barcodeBtn) {
+        barcodeBtn.addEventListener('click', openBarcodeModal);
+    }
+});
