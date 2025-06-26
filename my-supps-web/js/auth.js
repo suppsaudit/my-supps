@@ -209,3 +209,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 });
+
+// Googleログインボタンの挿入
+function insertGoogleLoginButton() {
+    const loginForm = document.getElementById('login-form');
+    const signupForm = document.getElementById('signup-form');
+    if (window.APP_CONFIG.FEATURES.GOOGLE_OAUTH) {
+        const googleBtn = document.createElement('button');
+        googleBtn.type = 'button';
+        googleBtn.className = 'google-login-btn';
+        googleBtn.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" style="width:20px;vertical-align:middle;margin-right:8px;">Googleでログイン';
+        googleBtn.onclick = signInWithGoogle;
+        loginForm.appendChild(googleBtn);
+        const googleBtn2 = googleBtn.cloneNode(true);
+        googleBtn2.onclick = signInWithGoogle;
+        signupForm.appendChild(googleBtn2);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    insertGoogleLoginButton();
+});

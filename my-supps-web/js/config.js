@@ -10,8 +10,8 @@ window.APP_CONFIG = {
     
     // サイト設定
     SITE: {
-        URL: window.location.protocol === 'file:' ? window.location.origin : 'http://localhost:3000',
-        NAME: 'MY SUPPS',
+        URL: window.location.protocol === 'file:' ? window.location.origin : 'https://supplify.app',
+        NAME: 'Supplify',
         DESCRIPTION: 'サプリメントをData Drivenに管理するなら。'
     },
     
@@ -51,7 +51,7 @@ window.APP_CONFIG = {
     
     // 機能フラグ
     FEATURES: {
-        GOOGLE_OAUTH: false, // 無料プランでは利用不可
+        GOOGLE_OAUTH: true, // Googleログインを本番で有効化
         IMAGE_UPLOAD: false,
         ADVANCED_ANALYTICS: false,
         EXPORT_DATA: true
