@@ -4,5 +4,23 @@
   "buildCommand": "",
   "installCommand": "",
   "outputDirectory": ".",
-  "framework": null
+  "framework": null,
+  "rewrites": [
+    {
+      "source": "/my-supps",
+      "destination": "/my-supps.html"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/dashboard.html"
+    },
+    {
+      "source": "/supps-audit",
+      "destination": "/supps-audit.html"
+    },
+    {
+      "source": "/auth",
+      "destination": "/auth.html"
+    }
+  ]
 }
