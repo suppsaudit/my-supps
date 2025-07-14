@@ -30,10 +30,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Set up search input event listener
     const searchInput = document.getElementById('supplement-search');
     if (searchInput) {
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                searchSupplements();
-            }
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') searchSupplementsSupabase();
         });
     }
 });
@@ -122,96 +120,45 @@ function saveSelectedSupplements() {
     localStorage.setItem('selectedSupplements', JSON.stringify(selectedSupplements));
 }
 
-// Search supplements using same logic as products page
-async function searchSupplements() {
-    const searchTerm = document.getElementById('supplement-search').value.trim();
-    const searchType = document.getElementById('search-type').value;
-    const resultsContainer = document.getElementById('search-results');
-    
-    if (!searchTerm) {
-        resultsContainer.innerHTML = '';
-        return;
-    }
-    
-    try {
-        resultsContainer.innerHTML = '<div class="loading">検索中...</div>';
-        
-        console.log('🔍 Supps Audit Search:', { searchTerm, searchType });
-        
-        // DSLD APIから直接検索（リアルタイム検索）
-        console.log('🔍 Searching DSLD API directly for:', searchTerm);
-        
-        let dsldResults = [];
-        
-        try {
-            // DSLD APIで直接検索（改良されたAPI統合）
-            const dsldResponse = await window.dsldApi.searchProducts(searchTerm, { 
-                limit: 50 
-            });
-            
-            if (dsldResponse && dsldResponse.hits && dsldResponse.hits.length > 0) {
-                console.log(`✅ Found ${dsldResponse.hits.length} products from improved API`);
-                dsldResults = dsldResponse.hits.map(hit => hit._source);
-            } else {
-                console.log('⚠️ No results found');
-                dsldResults = [];
-            }
-        } catch (apiError) {
-            console.error('❌ API search failed:', apiError);
-            // This should not happen with the new comprehensive fallback system
-            dsldResults = [];
-        }
-        
-        // Use DSLD results directly - they're already filtered by the API
-        const filteredProducts = dsldResults;
-        
-        console.log('🔍 Search results:', { searchTerm, resultsCount: filteredProducts.length });
-        
-        // Limit results and display
-        const limitedResults = filteredProducts.slice(0, 15);
-        displaySearchResults(limitedResults);
-        
-    } catch (error) {
-        console.error('Search error:', error);
-        resultsContainer.innerHTML = '<div class="error">検索エラーが発生しました。</div>';
-    }
-}
-
-// Display search results
-function displaySearchResults(results) {
+// Supabase DBから部分一致でサプリメント検索しiHerb風リスト表示
+async function searchSupplementsSupabase() {
     const container = document.getElementById('search-results');
-    
-    if (results.length === 0) {
-        container.innerHTML = '<div class="no-results">検索結果がありません。</div>';
+    const searchTerm = document.getElementById('supplement-search').value.trim();
+    if (!searchTerm) {
+        container.innerHTML = '<div class="no-results">検索ワードを入力してください。</div>';
         return;
     }
-    
-    container.innerHTML = results.map(supplement => {
-        const isSelected = selectedSupplements.some(s => s.id === supplement.id);
-        // iHerb形式の商品名を使用
-        const displayName = supplement.product_name || supplement.name_ja || supplement.name_en || supplement.name;
-        const brand = supplement.brand_name || supplement.brand || 'Unknown Brand';
-        const serving = supplement.serving_size || supplement.servingSize || '';
-        
-        return `
-            <div class="search-result-item ${isSelected ? 'selected' : ''}" data-id="${supplement.id}" data-nutrients='${JSON.stringify(supplement.nutrients || [])}'>
-                <div class="supplement-info">
-                    <h4>${displayName}</h4>
-                    <p><strong>${brand}</strong></p>
-                    ${serving ? `<p class="serving-info">摂取量: ${serving}</p>` : ''}
-                    ${supplement.ingredients && supplement.ingredients.length > 0 ? 
-                        `<p class="ingredients-preview">成分: ${supplement.ingredients.slice(0, 3).map(ing => ing.name || ing.ingredientGroup).join(', ')}${supplement.ingredients.length > 3 ? '...' : ''}</p>` 
-                        : ''}
+    container.innerHTML = '<div class="loading">検索中...</div>';
+    try {
+        // 複数カラムで部分一致検索（product_name, name_ja, name_en, brand, nutrients）
+        const { data, error } = await window.supabaseClient
+            .from('supplements')
+            .select('id, product_name, name_ja, name_en, brand, serving_size, nutrients')
+            .or(`product_name.ilike.%${searchTerm}%,name_ja.ilike.%${searchTerm}%,name_en.ilike.%${searchTerm}%,brand.ilike.%${searchTerm}%`);
+        console.log('APIレスポンス: supplements 検索', { data, error });
+        if (error) throw error;
+        if (!data || data.length === 0) {
+            container.innerHTML = '<div class="no-results">検索結果がありません。</div>';
+            return;
+        }
+        container.innerHTML = data.map(supp => {
+            const displayName = supp.product_name || supp.name_ja || supp.name_en || '(No Name)';
+            const brand = supp.brand || '';
+            const serving = supp.serving_size || '';
+            return `
+                <div class="search-result-item">
+                    <div class="supplement-info">
+                        <h4>${displayName}</h4>
+                        <p><strong>${brand}</strong></p>
+                        ${serving ? `<p class="serving-info">摂取量: ${serving}</p>` : ''}
+                    </div>
                 </div>
-                <button 
-                    onclick="toggleSupplementSelection('${supplement.id}', '${displayName.replace(/'/g, "\\'")}', '${brand.replace(/'/g, "\\'")}', '${serving}')" 
-                    class="selection-btn ${isSelected ? 'selected' : ''}"
-                >
-                    ${isSelected ? '選択解除' : '選択'}
-                </button>
-            </div>
-        `;
-    }).join('');
+            `;
+        }).join('');
+    } catch (err) {
+        container.innerHTML = '<div class="error">サプリメント検索に失敗しました。</div>';
+        console.error('サプリメント検索エラー:', err);
+    }
 }
 
 // Toggle supplement selection
@@ -1329,3 +1276,40 @@ function clearAllSelections() {
         });
     }
 }
+
+// Supabaseからサプリメント商品名のみ取得しiHerb風リスト表示
+async function showAllSupplementsIherbStyle() {
+    const container = document.getElementById('search-results');
+    container.innerHTML = '<div class="loading">サプリメント一覧を取得中...</div>';
+    try {
+        const { data, error } = await window.supabaseClient
+            .from('supplements')
+            .select('id, product_name, name_ja, name_en, brand, serving_size');
+        if (error) throw error;
+        if (!data || data.length === 0) {
+            container.innerHTML = '<div class="no-results">サプリメントが登録されていません。</div>';
+            return;
+        }
+        container.innerHTML = data.map(supp => {
+            // iHerb風の商品名表示（product_name > name_ja > name_en）
+            const displayName = supp.product_name || supp.name_ja || supp.name_en || '(No Name)';
+            const brand = supp.brand || '';
+            const serving = supp.serving_size || '';
+            return `
+                <div class="search-result-item">
+                    <div class="supplement-info">
+                        <h4>${displayName}</h4>
+                        <p><strong>${brand}</strong></p>
+                        ${serving ? `<p class="serving-info">摂取量: ${serving}</p>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (err) {
+        container.innerHTML = '<div class="error">サプリメント一覧の取得に失敗しました。</div>';
+        console.error('サプリメント一覧取得エラー:', err);
+    }
+}
+
+// windowスコープに必ず公開
+window.searchSupplements = searchSupplementsSupabase;

@@ -1,4 +1,4 @@
--- MY SUPPS Complete Database Schema
+-- Supplify Complete Database Schema
 -- Supabase SQL Editor で実行してください
 
 -- Enable UUID extension

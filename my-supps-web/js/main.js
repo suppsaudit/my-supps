@@ -1,14 +1,14 @@
 // MY SUPPS - Main JavaScript
 
 // Supabase configuration (will be replaced with actual credentials)
-const SUPABASE_URL = 'https://your-project.supabase.co';
-const SUPABASE_ANON_KEY = 'your-anon-key';
+// const SUPABASE_URL = 'https://your-project.supabase.co';
+// const SUPABASE_ANON_KEY = 'your-anon-key';
 
 // Initialize Supabase client (when credentials are available)
-let supabase = null;
-if (SUPABASE_URL !== 'https://your-project.supabase.co') {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-}
+// let supabase = null;
+// if (SUPABASE_URL !== 'https://your-project.supabase.co') {
+//     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// }
 
 // State management
 const appState = {
@@ -143,7 +143,7 @@ async function calculateCombinedNutrients(supplementIds) {
     const nutrients = {};
     
     // If no Supabase connection, use demo data
-    if (!supabase) {
+    if (!window.supabaseClient) {
         // Demo data
         const demoNutrients = {
             'ビタミンC': 150,
@@ -158,7 +158,7 @@ async function calculateCombinedNutrients(supplementIds) {
     
     // Real implementation with Supabase
     for (const suppId of supplementIds) {
-        const { data, error } = await supabase
+        const { data, error } = await window.supabaseClient
             .from('supplement_nutrients')
             .select(`
                 nutrient_id,
@@ -209,7 +209,7 @@ window.onclick = function(event) {
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     // Check for user session if Supabase is configured
-    if (supabase) {
+    if (window.supabaseClient) {
         checkUserSession();
     }
     
@@ -222,9 +222,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // User session management
 async function checkUserSession() {
-    if (!supabase) return;
+    if (!window.supabaseClient) return;
     
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await window.supabaseClient.auth.getUser();
     if (user) {
         appState.currentUser = user;
         updateUserMenu(user);
@@ -242,8 +242,22 @@ function updateUserMenu(user) {
 }
 
 async function logout() {
-    if (supabase) {
-        await supabase.auth.signOut();
+    if (window.supabaseClient) {
+        await window.supabaseClient.auth.signOut();
         window.location.href = '/';
     }
+}
+
+// API呼び出し時はwindow.supabaseClientを参照
+// 例: サプリメントデータ取得
+async function fetchSupplements() {
+    if (!window.supabaseClient) {
+        console.error('Supabase client not initialized');
+        return;
+    }
+    const { data, error } = await window.supabaseClient
+        .from('supplements')
+        .select('*');
+    console.log('APIレスポンス: supplements', { data, error });
+    return { data, error };
 }

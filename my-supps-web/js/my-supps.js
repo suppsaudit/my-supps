@@ -5,21 +5,16 @@ let mySupplements = [];
 
 // Check authentication on page load
 document.addEventListener('DOMContentLoaded', async () => {
-    // Supabaseクライアントの初期化を待つ
     let attempts = 0;
-    while ((!window.supabaseClient && !window.isDemo) && attempts < 50) {
+    while (!window.supabaseClient && attempts < 50) {
         await new Promise(resolve => setTimeout(resolve, 100));
         attempts++;
     }
-    
-    // 共通のSupabaseクライアントを使用
     if (window.supabaseClient) {
         window.supabase = window.supabaseClient;
     }
-    
     currentUser = await checkAuth();
     console.log('My Supps page - Current user:', currentUser);
-    
     if (!currentUser) {
         document.getElementById('auth-check').style.display = 'block';
         document.getElementById('my-supps-content').style.display = 'none';
@@ -33,46 +28,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Load user's supplements
 async function loadMySupplements() {
     try {
-        // Check if we're in demo mode
-        if (window.isDemo) {
-            // Load from localStorage for demo mode
-            const mockUserSupps = JSON.parse(localStorage.getItem('mockUserSupplements') || '[]');
-            const mockSupplements = JSON.parse(localStorage.getItem('mockSupplements') || '[]');
-            
-            mySupplements = mockUserSupps
-                .filter(us => us.user_id === currentUser.id && us.is_my_supps)
-                .map(us => {
-                    const supplement = mockSupplements.find(s => s.id === us.supplement_id);
-                    return {
-                        supplement_id: us.supplement_id,
-                        supplements: supplement || { id: us.supplement_id, name_ja: 'Unknown', brand: 'Unknown' }
-                    };
-                });
-        } else {
-            const { data, error } = await supabase
-                .from('user_supplements')
-                .select(`
-                    supplement_id,
-                    supplements (
-                        id,
-                        name_ja,
-                        brand,
-                        image_url
-                    )
-                `)
-                .eq('user_id', currentUser.id)
-                .eq('is_my_supps', true);
-            
-            if (error) throw error;
-            
-            mySupplements = data || [];
-        }
-        
+        // デモモード分岐を完全削除
+        const { data, error } = await window.supabaseClient
+            .from('user_supplements')
+            .select(`
+                supplement_id,
+                supplements (
+                    id,
+                    name_ja,
+                    brand,
+                    image_url
+                )
+            `)
+            .eq('user_id', currentUser.id)
+            .eq('is_my_supps', true);
+        console.log('APIレスポンス: user_supplements load', { data, error });
+        if (error) throw error;
+        mySupplements = data || [];
         displayMySupplements();
         updateStats();
-        
     } catch (error) {
         console.error('Error loading supplements:', error);
+        document.getElementById('my-supplements-list').innerHTML = '<p class="error-message">サプリメントデータの取得に失敗しました。管理者に連絡してください。</p>';
     }
 }
 
@@ -104,280 +81,93 @@ async function searchSupplements() {
     const searchTerm = document.getElementById('supplement-search').value.trim();
     const searchType = document.getElementById('search-type').value;
     const resultsContainer = document.getElementById('search-results');
-    
     if (!searchTerm) {
         resultsContainer.innerHTML = '';
         return;
     }
-    
     try {
         resultsContainer.innerHTML = '<div class="loading">検索中...</div>';
-        
         console.log('🔍 My Supps Search:', { searchTerm, searchType });
-        
         let results = [];
         
-        // Try DSLD API first
+        // 第一步: Supabaseデータベースで検索（バーコード、商品名、ブランド）
         try {
-            if (window.dsldApi) {
-                console.log('🔍 Searching DSLD API for:', searchTerm);
-                
-                const dsldResponse = await window.dsldApi.searchProducts(searchTerm, { 
-                    limit: 10 
-                });
-                
-                if (dsldResponse && dsldResponse.hits && dsldResponse.hits.length > 0) {
-                    console.log(`✅ Found ${dsldResponse.hits.length} products from DSLD API`);
-                    results = dsldResponse.hits.map(hit => ({
-                        id: hit._source.id || hit._id,
-                        name_ja: hit._source.product_name || hit._source.fullName,
-                        name_en: hit._source.full_name_original || hit._source.fullName,
-                        brand: hit._source.brand_name || hit._source.brandName,
-                        serving_size: hit._source.serving_size || '1 unit',
-                        nutrients: hit._source.nutrients || []
-                    }));
-                } else {
-                    console.log('⚠️ No results from DSLD API');
-                }
+            console.log('🔍 Searching Supabase database for:', searchTerm);
+            
+            // バーコードかどうかを判定（数字のみかつ長さが8-14桁）
+            const isBarcode = /^\d{8,14}$/.test(searchTerm);
+            
+            let query = window.supabaseClient.from('supplements');
+            
+            if (isBarcode) {
+                // バーコード検索（dsld_idで検索、barcodeカラムが存在しない場合に対応）
+                console.log('🔍 Detected barcode search:', searchTerm);
+                query = query.eq('dsld_id', `DSLD_${searchTerm}`);
+            } else {
+                // テキスト検索（商品名、ブランド）
+                query = query.or(`name_ja.ilike.%${searchTerm}%,name_en.ilike.%${searchTerm}%,brand.ilike.%${searchTerm}%`);
             }
-        } catch (apiError) {
-            console.error('❌ DSLD API search failed:', apiError);
+            
+            const { data: supabaseResults, error } = await query
+                .select('id, dsld_id, name_ja, name_en, brand, serving_size, category')
+                .limit(20);
+            
+            if (error) {
+                console.error('❌ Supabase search error:', error);
+            } else if (supabaseResults && supabaseResults.length > 0) {
+                console.log(`✅ Found ${supabaseResults.length} products from Supabase`);
+                results = supabaseResults.map(item => ({
+                    id: item.id,
+                    dsld_id: item.dsld_id,
+                    name_ja: item.name_ja,
+                    name_en: item.name_en,
+                    brand: item.brand,
+                    serving_size: item.serving_size,
+                    category: item.category,
+                    source: 'database'
+                }));
+            } else {
+                console.log('⚠️ No results from Supabase database');
+            }
+        } catch (dbError) {
+            console.error('❌ Supabase database search failed:', dbError);
         }
         
-        // Fallback to comprehensive mock data if no DSLD results
+        // 第二步: Supabaseで結果がない場合のDSLD API検索
         if (results.length === 0) {
-            console.log('🔄 Using fallback mock data for My Supps search');
-            results = generateMySuppsSearchResults(searchTerm);
+            try {
+                if (window.dsldApi) {
+                    console.log('🔍 Searching DSLD API for:', searchTerm);
+                    const dsldResponse = await window.dsldApi.searchProducts(searchTerm, { limit: 10 });
+                    if (dsldResponse && dsldResponse.hits && dsldResponse.hits.length > 0) {
+                        console.log(`✅ Found ${dsldResponse.hits.length} products from DSLD API`);
+                        results = dsldResponse.hits.map(hit => ({
+                            id: hit._source.id || hit._id,
+                            name_ja: hit._source.product_name || hit._source.fullName,
+                            name_en: hit._source.full_name_original || hit._source.fullName,
+                            brand: hit._source.brand_name || hit._source.brandName,
+                            serving_size: hit._source.serving_size || '1 unit',
+                            nutrients: hit._source.nutrients || [],
+                            source: 'dsld_api'
+                        }));
+                    } else {
+                        console.log('⚠️ No results from DSLD API');
+                    }
+                }
+            } catch (apiError) {
+                console.error('❌ DSLD API search failed:', apiError);
+                if (results.length === 0) {
+                    resultsContainer.innerHTML = '<p>検索結果がありません。バーコードまたは商品名で再度お試しください。</p>';
+                    return;
+                }
+            }
         }
         
         displaySearchResults(results);
-        
     } catch (error) {
         console.error('Error searching supplements:', error);
         resultsContainer.innerHTML = '<p>検索エラーが発生しました。</p>';
     }
-}
-
-// Generate comprehensive search results for My Supps
-function generateMySuppsSearchResults(searchTerm) {
-    const searchTermLower = searchTerm.toLowerCase();
-    
-    const mockProducts = [
-        // ビタミン類
-        {
-            id: 'my-supp-1',
-            name_ja: 'ビタミンC 1000mg',
-            name_en: 'Vitamin C 1000mg',
-            brand: 'Nature\'s Way',
-            serving_size: '1 capsule',
-            nutrients: [{ name_ja: 'ビタミンC', amount: 1000, unit: 'mg' }]
-        },
-        {
-            id: 'my-supp-2',
-            name_ja: 'ビタミンD3 5000 IU',
-            name_en: 'Vitamin D3 5000 IU',
-            brand: 'NOW Foods',
-            serving_size: '1 softgel',
-            nutrients: [{ name_ja: 'ビタミンD3', amount: 5000, unit: 'IU' }]
-        },
-        {
-            id: 'my-supp-3',
-            name_ja: 'ビタミンE 400 IU',
-            name_en: 'Vitamin E 400 IU',
-            brand: 'Solgar',
-            serving_size: '1 softgel',
-            nutrients: [{ name_ja: 'ビタミンE', amount: 400, unit: 'IU' }]
-        },
-        {
-            id: 'my-supp-4',
-            name_ja: 'ビタミンBコンプレックス',
-            name_en: 'B-Complex Vitamins',
-            brand: 'Garden of Life',
-            serving_size: '1 capsule',
-            nutrients: [
-                { name_ja: 'ビタミンB1', amount: 25, unit: 'mg' },
-                { name_ja: 'ビタミンB6', amount: 25, unit: 'mg' },
-                { name_ja: 'ビタミンB12', amount: 100, unit: 'mcg' }
-            ]
-        },
-        // ミネラル類
-        {
-            id: 'my-supp-5',
-            name_ja: 'マグネシウム グリシネート 200mg',
-            name_en: 'Magnesium Glycinate 200mg',
-            brand: 'Doctor\'s Best',
-            serving_size: '2 tablets',
-            nutrients: [{ name_ja: 'マグネシウム', amount: 200, unit: 'mg' }]
-        },
-        {
-            id: 'my-supp-6',
-            name_ja: '亜鉛 ピコリネート 15mg',
-            name_en: 'Zinc Picolinate 15mg',
-            brand: 'Thorne',
-            serving_size: '1 capsule',
-            nutrients: [{ name_ja: '亜鉛', amount: 15, unit: 'mg' }]
-        },
-        {
-            id: 'my-supp-7',
-            name_ja: '鉄分 28mg',
-            name_en: 'Iron 28mg',
-            brand: 'Life Extension',
-            serving_size: '1 capsule',
-            nutrients: [{ name_ja: '鉄', amount: 28, unit: 'mg' }]
-        },
-        {
-            id: 'my-supp-8',
-            name_ja: 'カルシウム 1000mg',
-            name_en: 'Calcium 1000mg',
-            brand: 'NOW Foods',
-            serving_size: '1 tablet',
-            nutrients: [{ name_ja: 'カルシウム', amount: 1000, unit: 'mg' }]
-        },
-        // オメガ系
-        {
-            id: 'my-supp-9',
-            name_ja: 'オメガ3 フィッシュオイル',
-            name_en: 'Omega-3 Fish Oil',
-            brand: 'Nordic Naturals',
-            serving_size: '2 softgels',
-            nutrients: [
-                { name_ja: 'EPA', amount: 650, unit: 'mg' },
-                { name_ja: 'DHA', amount: 450, unit: 'mg' }
-            ]
-        },
-        // プロバイオティクス
-        {
-            id: 'my-supp-10',
-            name_ja: 'プロバイオティクス 85億CFU',
-            name_en: 'Probiotics 85 Billion CFU',
-            brand: 'Garden of Life',
-            serving_size: '1 capsule',
-            nutrients: [{ name_ja: 'プロバイオティクス', amount: 85, unit: 'billion CFU' }]
-        },
-        // 特殊成分
-        {
-            id: 'my-supp-11',
-            name_ja: 'カルノシン 500mg',
-            name_en: 'L-Carnosine 500mg',
-            brand: 'NOW Foods',
-            serving_size: '1 capsule',
-            nutrients: [{ name_ja: 'カルノシン', amount: 500, unit: 'mg' }]
-        },
-        {
-            id: 'my-supp-12',
-            name_ja: 'コエンザイムQ10 100mg',
-            name_en: 'CoQ10 100mg',
-            brand: 'Jarrow Formulas',
-            serving_size: '1 capsule',
-            nutrients: [{ name_ja: 'コエンザイムQ10', amount: 100, unit: 'mg' }]
-        },
-        {
-            id: 'my-supp-13',
-            name_ja: 'コラーゲン ペプチド',
-            name_en: 'Collagen Peptides',
-            brand: 'Sports Research',
-            serving_size: '1 scoop',
-            nutrients: [{ name_ja: 'コラーゲン', amount: 10000, unit: 'mg' }]
-        },
-        // ハーブ・植物エキス
-        {
-            id: 'my-supp-14',
-            name_ja: 'クルクミン ウコン 1000mg',
-            name_en: 'Turmeric Curcumin 1000mg',
-            brand: 'Nature\'s Bounty',
-            serving_size: '1 capsule',
-            nutrients: [{ name_ja: 'クルクミン', amount: 950, unit: 'mg' }]
-        },
-        {
-            id: 'my-supp-15',
-            name_ja: 'アシュワガンダ 450mg',
-            name_en: 'Ashwagandha 450mg',
-            brand: 'Swanson',
-            serving_size: '1 capsule',
-            nutrients: [{ name_ja: 'アシュワガンダ', amount: 450, unit: 'mg' }]
-        }
-    ];
-    
-    // Enhanced search with multiple criteria
-    return mockProducts.filter(product => {
-        const searchableText = [
-            product.name_ja,
-            product.name_en,
-            product.brand,
-            ...product.nutrients.map(n => n.name_ja)
-        ].join(' ').toLowerCase();
-        
-        // Direct text matching
-        if (searchableText.includes(searchTermLower)) {
-            return true;
-        }
-        
-        // Japanese-English translation matching
-        const translateMap = {
-            'ビタミンc': ['vitamin c', 'ビタミンc'],
-            'ビタミンd': ['vitamin d', 'ビタミンd'],
-            'ビタミンe': ['vitamin e', 'ビタミンe'],
-            'ビタミンb': ['vitamin b', 'ビタミンb', 'b-complex'],
-            'マグネシウム': ['magnesium', 'マグネシウム'],
-            '亜鉛': ['zinc', '亜鉛'],
-            '鉄': ['iron', '鉄'],
-            'カルシウム': ['calcium', 'カルシウム'],
-            'オメガ': ['omega', 'オメガ', 'fish oil'],
-            'プロバイオティクス': ['probiotics', 'プロバイオティクス'],
-            'カルノシン': ['carnosine', 'カルノシン'],
-            'コエンザイム': ['coq10', 'coenzyme', 'コエンザイム'],
-            'コラーゲン': ['collagen', 'コラーゲン'],
-            'クルクミン': ['curcumin', 'turmeric', 'クルクミン', 'ウコン'],
-            'アシュワガンダ': ['ashwagandha', 'アシュワガンダ']
-        };
-        
-        for (const [japanese, englishTerms] of Object.entries(translateMap)) {
-            if (searchTermLower.includes(japanese)) {
-                return englishTerms.some(term => searchableText.includes(term.toLowerCase()));
-            }
-        }
-        
-        return false;
-    });
-}
-
-// Auto-complete suggestions
-async function showSuggestions() {
-    const searchTerm = document.getElementById('supplement-search').value.trim();
-    const suggestionsContainer = document.getElementById('search-suggestions');
-    
-    if (searchTerm.length < 2) {
-        suggestionsContainer.style.display = 'none';
-        return;
-    }
-    
-    try {
-        const results = await window.advancedSearch.quickSearch(searchTerm);
-        
-        if (results.data && results.data.length > 0) {
-            const suggestionsHtml = results.data.slice(0, 5).map(item => `
-                <div class="suggestion-item" onclick="selectSuggestion('${item.name_en || item.name_ja}')">
-                    <div class="suggestion-type">${item.brand}</div>
-                    <div class="suggestion-text">${item.name_ja || item.name_en}</div>
-                </div>
-            `).join('');
-            
-            suggestionsContainer.innerHTML = suggestionsHtml;
-            suggestionsContainer.style.display = 'block';
-        } else {
-            suggestionsContainer.style.display = 'none';
-        }
-    } catch (error) {
-        console.error('Error getting suggestions:', error);
-        suggestionsContainer.style.display = 'none';
-    }
-}
-
-// Select suggestion
-function selectSuggestion(suggestion) {
-    document.getElementById('supplement-search').value = suggestion;
-    document.getElementById('search-suggestions').style.display = 'none';
-    searchSupplements();
 }
 
 // Display search results
@@ -400,6 +190,8 @@ function displaySearchResults(results) {
                     <h4>${displayName}</h4>
                     <p><strong>${supplement.brand}</strong></p>
                     ${serving ? `<p class="serving-info">摂取量: ${serving}</p>` : ''}
+                    ${supplement.dsld_id ? `<p class="dsld-info">DSLD ID: ${supplement.dsld_id}</p>` : ''}
+                    ${supplement.category ? `<p class="category-info">カテゴリ: ${supplement.category}</p>` : ''}
                 </div>
                 <button 
                     onclick="addToMySupps('${supplement.id}')" 
@@ -439,7 +231,7 @@ async function addToMySupps(supplementId) {
             
             localStorage.setItem('mockUserSupplements', JSON.stringify(mockUserSupps));
         } else {
-            const { error } = await supabase
+            const { error } = await window.supabaseClient
                 .from('user_supplements')
                 .upsert({
                     user_id: currentUser.id,
@@ -447,7 +239,7 @@ async function addToMySupps(supplementId) {
                     is_my_supps: true,
                     is_selected: false
                 });
-            
+            console.log('APIレスポンス: user_supplements add', { error });
             if (error) throw error;
             
             // Auto-generate intake schedule
@@ -482,12 +274,12 @@ async function removeFromMySupps(supplementId) {
             );
             localStorage.setItem('mockUserSupplements', JSON.stringify(filtered));
         } else {
-            const { error } = await supabase
+            const { error } = await window.supabaseClient
                 .from('user_supplements')
                 .delete()
                 .eq('user_id', currentUser.id)
                 .eq('supplement_id', supplementId);
-            
+            console.log('APIレスポンス: user_supplements remove', { error });
             if (error) throw error;
         }
         
@@ -548,7 +340,7 @@ async function analyzeMySupps() {
             // Get nutrient data for all supplements
             const supplementIds = mySupplements.map(s => s.supplement_id);
             
-            const { data, error } = await supabase
+            const { data, error } = await window.supabaseClient
                 .from('supplement_nutrients')
                 .select(`
                     supplement_id,
@@ -560,6 +352,7 @@ async function analyzeMySupps() {
                 `)
                 .in('supplement_id', supplementIds);
             
+            console.log('APIレスポンス: supplement_nutrients analyze', { data, error });
             if (error) throw error;
             
             // Calculate combined nutrients

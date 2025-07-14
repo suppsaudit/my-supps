@@ -44,9 +44,9 @@ window.APP_CONFIG = {
     
     // デバッグ設定
     DEBUG: {
-        ENABLED: true, // 本番環境では false に設定
-        LOG_LEVEL: 'info', // 'debug', 'info', 'warn', 'error'
-        SHOW_DEMO_NOTIFICATION: true
+        ENABLED: false, // 本番環境では必ずfalse
+        LOG_LEVEL: 'info',
+        SHOW_DEMO_NOTIFICATION: false
     },
     
     // 機能フラグ
@@ -93,29 +93,13 @@ window.validateConfig = function() {
 // 設定初期化（ページロード時）
 document.addEventListener('DOMContentLoaded', function() {
     const validation = window.validateConfig();
-    
-    if (window.APP_CONFIG.DEBUG.ENABLED) {
-        console.log('🔧 APP CONFIG:', window.APP_CONFIG);
-        console.log('✅ Config Validation:', validation);
-        
-        if (!validation.isValid) {
-            console.warn('⚠️ Configuration Issues:', validation.issues);
-            
-            // デモモード判定
-            if (validation.issues.some(issue => issue.includes('Supabase'))) {
-                console.log('🎭 Running in Demo Mode');
-                window.isDemo = true;
-                
-                if (window.APP_CONFIG.DEBUG.SHOW_DEMO_NOTIFICATION) {
-                    setTimeout(() => {
-                        showDemoNotification();
-                    }, 1000);
-                }
-            }
-        } else {
-            console.log('🚀 Production Mode - Supabase Connected');
-            window.isDemo = false;
-        }
+    // デモモード分岐・isDemo判定を完全削除
+    console.log('🔧 APP CONFIG:', window.APP_CONFIG);
+    console.log('✅ Config Validation:', validation);
+    if (!validation.isValid) {
+        console.warn('⚠️ Configuration Issues:', validation.issues);
+    } else {
+        console.log('🚀 Production Mode - Supabase Connected');
     }
 });
 

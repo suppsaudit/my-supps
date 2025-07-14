@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Supabase データベース接続テスト</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Supabase データベース接続テスト</h1>
+    <div id="status">接続中...</div>
+    <div id="results"></div>
+    
+    <button onclick="testConnection()">接続テスト</button>
+    <button onclick="addBarcodeColumn()">barcodeカラムを追加</button>
+    <button onclick="completelyDeleteAllData()">全データを完全削除</button>
+    <button onclick="insertRealData()">実際のデータを投入</button>
+    <button onclick="testBarcodeSearch()">バーコード検索テスト</button>
+
+    <script>
+        // Supabase設定
+        const supabaseUrl = 'https://xkcaxrvnvefstzvpldzf.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhrY2F4cnZudmVmc3R6dnBsZHpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAwNjc3ODYsImV4cCI6MjA2NTY0Mzc4Nn0.KPI-586rKSlcGTi9o2YWR1n1pxfaqoPaPouclCu6Q5I';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        function log(message) {
+            document.getElementById('results').innerHTML += '<div>' + message + '</div>';
+            console.log(message);
+        }
+        
+        async function completelyDeleteAllData() {
+            if (!confirm('⚠️ 警告: 全てのデータを完全削除します。続行しますか？')) {
+                return;
+            }
+            
+            log('🗑️ 全データを完全削除中...');
+            document.getElementById('results').innerHTML = '';
+            
+            try {
+                // まず現在のデータ状況を確認
+                const { data: currentSupps } = await supabase.from('supplements').select('id, name_ja, brand');
+                if (currentSupps) {
+                    log(`削除前のデータ: ${currentSupps.length}件`);
+                    currentSupps.forEach(item => {
+                        log(`- ${item.name_ja} (${item.brand})`);
+                    });
+                }
+                
+                // 段階的に削除
+                log('1. user_supplements削除中...');
+                const { error: userError } = await supabase.from('user_supplements').delete().gte('created_at', '1900-01-01');
+                if (userError) log('user_supplements削除エラー: ' + userError.message);
+                
+                log('2. supplement_nutrients削除中...');
+                const { error: snError } = await supabase.from('supplement_nutrients').delete().gte('created_at', '1900-01-01');
+                if (snError) log('supplement_nutrients削除エラー: ' + snError.message);
+                
+                log('3. supplements削除中...');
+                const { error: suppError } = await supabase.from('supplements').delete().gte('created_at', '1900-01-01');
+                if (suppError) log('supplements削除エラー: ' + suppError.message);
+                
+                log('4. nutrients削除中...');
+                const { error: nutError } = await supabase.from('nutrients').delete().gte('created_at', '1900-01-01');
+                if (nutError) log('nutrients削除エラー: ' + nutError.message);
+                
+                // 削除確認
+                const { data: remainingSupps } = await supabase.from('supplements').select('*');
+                log(`✅ 削除完了! 残りのデータ: ${remainingSupps ? remainingSupps.length : 0}件`);
+                
+                if (remainingSupps && remainingSupps.length === 0) {
+                    log('🎉 全データの完全削除に成功しました！');
+                } else {
+                    log('⚠️ 一部データが残っています');
+                    if (remainingSupps && remainingSupps.length > 0) {
+                        remainingSupps.forEach(item => {
+                            log(`残存データ: ${item.name_ja || item.name_en} (${item.brand})`);
+                        });
+                    }
+                }
+                
+            } catch (err) {
+                log('❌ 削除中にエラー: ' + err.message);
+            }
+        }
+        
+        async function addBarcodeColumn() {
+            log('🔧 supplementsテーブルにbarcodeカラムを追加中...');
+            
+            try {
+                // SQL文を実行してbarcodeカラムを追加
+                const { data, error } = await supabase.rpc('exec_sql', {
+                    sql: 'ALTER TABLE supplements ADD COLUMN IF NOT EXISTS barcode TEXT;'
+                });
+                
+                if (error) {
+                    log('❌ カラム追加エラー: ' + error.message);
+                    log('💡 Supabaseダッシュボードで手動で以下のSQLを実行してください:');
+                    log('ALTER TABLE supplements ADD COLUMN barcode TEXT;');
+                } else {
+                    log('✅ barcodeカラムの追加に成功しました');
+                }
+            } catch (err) {
+                log('❌ カラム追加中にエラー: ' + err.message);
+                log('💡 Supabaseダッシュボードで手動で以下のSQLを実行してください:');
+                log('ALTER TABLE supplements ADD COLUMN barcode TEXT;');
+            }
+        }
+        
+        async function testConnection() {
+            document.getElementById('status').textContent = '接続テスト中...';
+            document.getElementById('results').innerHTML = '';
+            
+            try {
+                // 現在のsupplementsテーブルの状況を確認
+                const { data, error } = await supabase
+                    .from('supplements')
+                    .select('*')
+                    .limit(5);
+                
+                if (error) {
+                    log('❌ エラー: ' + error.message);
+                    document.getElementById('status').textContent = '接続失敗';
+                } else {
+                    log('✅ 接続成功');
+                    log('現在のデータ数: ' + (data ? data.length : 0));
+                    if (data && data.length > 0) {
+                        log('サンプルデータ: ' + JSON.stringify(data[0], null, 2));
+                    }
+                    document.getElementById('status').textContent = '接続成功';
+                }
+            } catch (err) {
+                log('❌ 例外エラー: ' + err.message);
+                document.getElementById('status').textContent = '接続失敗';
+            }
+        }
+        
+        async function insertRealData() {
+            log('🔄 実際のサプリメントデータを投入中...');
+            
+            try {
+                // ステップ0: barcodeカラムを追加（存在しない場合）
+                log('0. barcodeカラムを追加中...');
+                try {
+                    await supabase.rpc('add_barcode_column');
+                } catch (rpcError) {
+                    log('⚠️ RPC呼び出しに失敗しました。手動でカラムを追加します。');
+                }
+                
+                // ステップ1: 既存データを完全削除
+                log('1. 既存データを完全削除中...');
+                
+                // より確実な削除方法
+                const { data: allSupplements } = await supabase.from('supplements').select('id');
+                if (allSupplements && allSupplements.length > 0) {
+                    log(`削除対象: ${allSupplements.length}件のサプリメント`);
+                    
+                    // 関連データから順番に削除
+                    await supabase.from('user_supplements').delete().gte('created_at', '1900-01-01');
+                    await supabase.from('supplement_nutrients').delete().gte('id', '00000000-0000-0000-0000-000000000000');
+                    await supabase.from('supplements').delete().gte('created_at', '1900-01-01');
+                    await supabase.from('nutrients').delete().gte('created_at', '1900-01-01');
+                    
+                    log('✅ 全データ削除完了');
+                } else {
+                    log('⚠️ 削除対象のデータがありません');
+                }
+                
+                // ステップ2: 実際のNOW Foods商品を投入（barcodeカラムなしで）
+                log('2. NOW Foods商品を投入中...');
+                const { data: suppData, error: suppError } = await supabase
+                    .from('supplements')
+                    .insert([
+                        {
+                            dsld_id: 'DSLD_733739025401',
+                            name_en: 'NOW Foods Propolis 1500',
+                            name_ja: 'NOW Foods プロポリス 1500',
+                            brand: 'NOW Foods',
+                            serving_size: '1 capsule',
+                            category: 'supplements'
+                        },
+                        {
+                            dsld_id: 'DSLD_19121619',
+                            name_en: 'NOW Foods Vitamin C-1000 Sustained Release',
+                            name_ja: 'NOW Foods ビタミンC-1000 徐放性',
+                            brand: 'NOW Foods',
+                            serving_size: '1 tablet',
+                            category: 'vitamins'
+                        },
+                        {
+                            dsld_id: 'DSLD_733739003737',
+                            name_en: 'NOW Foods Vitamin D-3 5000 IU Softgels',
+                            name_ja: 'NOW Foods ビタミンD-3 5000 IU ソフトジェル',
+                            brand: 'NOW Foods',
+                            serving_size: '1 softgel',
+                            category: 'vitamins'
+                        },
+                        {
+                            dsld_id: 'DSLD_733739012890',
+                            name_en: 'NOW Foods Magnesium Glycinate',
+                            name_ja: 'NOW Foods マグネシウムグリシネート',
+                            brand: 'NOW Foods',
+                            serving_size: '1 tablet',
+                            category: 'minerals'
+                        },
+                        {
+                            dsld_id: 'DSLD_033674155103',
+                            name_en: 'Nature\'s Way Vitamin C-1000',
+                            name_ja: 'Nature\'s Way ビタミンC-1000',
+                            brand: 'Nature\'s Way',
+                            serving_size: '1 tablet',
+                            category: 'vitamins'
+                        }
+                    ]);
+                
+                if (suppError) {
+                    log('❌ 商品投入エラー: ' + suppError.message);
+                } else {
+                    log('✅ 商品投入成功: ' + (suppData ? suppData.length : 0) + '件');
+                    
+                    // 投入確認：NOW Foods商品数をチェック
+                    const { data: checkData, error: checkError } = await supabase
+                        .from('supplements')
+                        .select('*')
+                        .eq('brand', 'NOW Foods');
+                    
+                    if (!checkError && checkData) {
+                        log(`✅ NOW Foods商品確認: ${checkData.length}件投入完了`);
+                        checkData.forEach(item => {
+                            log(`- ${item.name_ja} (DSLD ID: ${item.dsld_id})`);
+                        });
+                    }
+                }
+                
+                // ステップ3: 栄養成分データを投入
+                log('3. 栄養成分データを投入中...');
+                const { data: nutData, error: nutError } = await supabase
+                    .from('nutrients')
+                    .insert([
+                        { name_ja: 'ビタミンC', name_en: 'Vitamin C', category: 'vitamin', unit: 'mg' },
+                        { name_ja: 'ビタミンD3', name_en: 'Vitamin D3', category: 'vitamin', unit: 'IU' },
+                        { name_ja: 'プロポリス', name_en: 'Propolis', category: 'supplement', unit: 'mg' }
+                    ]);
+                
+                if (nutError) {
+                    log('❌ 栄養成分投入エラー: ' + nutError.message);
+                } else {
+                    log('✅ 栄養成分投入成功');
+                }
+                
+                log('✅ データ投入完了！');
+                
+            } catch (err) {
+                log('❌ データ投入中にエラー: ' + err.message);
+            }
+        }
+        
+        async function testBarcodeSearch() {
+            log('🔍 バーコード検索テスト: 19121619');
+            
+            try {
+                // ステップ1: 全テーブルの商品数を確認
+                const { data: allData, error: allError } = await supabase
+                    .from('supplements')
+                    .select('*');
+                
+                if (!allError && allData) {
+                    log(`📊 全商品数: ${allData.length}件`);
+                }
+                
+                // ステップ2: dsld_idで検索
+                log('🔍 DSLD_19121619で検索中...');
+                const { data, error } = await supabase
+                    .from('supplements')
+                    .select('*')
+                    .eq('dsld_id', 'DSLD_19121619');
+                
+                if (error) {
+                    log('❌ 検索エラー: ' + error.message);
+                } else {
+                    log('🎯 DSLD_19121619の検索結果: ' + (data ? data.length : 0) + '件');
+                    if (data && data.length > 0) {
+                        data.forEach(item => {
+                            log('✅ 見つかった商品: ' + item.name_ja + ' (DSLD ID: ' + item.dsld_id + ')');
+                        });
+                    } else {
+                        log('⚠️ DSLD_19121619の商品が見つかりません');
+                    }
+                }
+                
+                // ステップ3: NOW Foodsブランドで検索
+                log('🔍 NOW Foodsブランドで検索中...');
+                const { data: brandData, error: brandError } = await supabase
+                    .from('supplements')
+                    .select('*')
+                    .eq('brand', 'NOW Foods');
+                
+                if (brandError) {
+                    log('❌ ブランド検索エラー: ' + brandError.message);
+                } else if (brandData && brandData.length > 0) {
+                    log('✅ NOW Foods商品が見つかりました: ' + brandData.length + '件');
+                    brandData.forEach(item => {
+                        log('- ' + item.name_ja + ' (DSLD ID: ' + item.dsld_id + ')');
+                    });
+                } else {
+                    log('⚠️ NOW Foods商品が見つかりません');
+                }
+                
+                // ステップ4: 部分一致検索でVitamin Cを探す
+                log('🔍 "Vitamin C"を含む商品を検索中...');
+                const { data: vitcData, error: vitcError } = await supabase
+                    .from('supplements')
+                    .select('*')
+                    .or('name_ja.ilike.%ビタミンC%,name_en.ilike.%Vitamin C%');
+                
+                if (vitcData && vitcData.length > 0) {
+                    log('✅ ビタミンC商品が見つかりました: ' + vitcData.length + '件');
+                    vitcData.forEach(item => {
+                        log('- ' + item.name_ja + ' (ブランド: ' + item.brand + ', DSLD ID: ' + item.dsld_id + ')');
+                    });
+                }
+                
+            } catch (err) {
+                log('❌ 検索中にエラー: ' + err.message);
+            }
+        }
+        
+        // ページ読み込み時に自動で接続テスト
+        window.onload = function() {
+            testConnection();
+        };
+    </script>
+</body>
+</html>

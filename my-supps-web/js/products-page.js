@@ -1285,14 +1285,14 @@ async function addToMySupps(productId) {
             // まずテーブルの存在確認
             try {
                 const testQuery = await window.supabaseClient.from('supplements').select('id').limit(1);
-                console.log('Supplements table test:', testQuery);
+                console.log('APIレスポンス: supplements test query', testQuery);
             } catch (testError) {
                 console.error('Supplements table test failed:', testError);
             }
             
             try {
                 const testQuery2 = await window.supabaseClient.from('user_supplements').select('user_id').limit(1);
-                console.log('User_supplements table test:', testQuery2);
+                console.log('APIレスポンス: user_supplements test query', testQuery2);
             } catch (testError2) {
                 console.error('User_supplements table test failed:', testError2);
             }
@@ -1314,7 +1314,7 @@ async function addToMySupps(productId) {
                 .from('supplements')
                 .upsert(supplementData, { onConflict: 'dsld_id' });
             
-            console.log('Supplement upsert result:', { suppData, suppError });
+            console.log('APIレスポンス: supplements upsert', { suppData, suppError });
             
             // 実際に挿入されたサプリメントのUUIDを取得
             let actualSupplementId;
@@ -1327,6 +1327,7 @@ async function addToMySupps(productId) {
                     .select('id')
                     .eq('dsld_id', product.dsld_id || `DSLD_${productId}`)
                     .single();
+                console.log('APIレスポンス: existing supplement search', { existingSupp });
                 actualSupplementId = existingSupp?.id;
             }
             
@@ -1350,7 +1351,7 @@ async function addToMySupps(productId) {
                 .from('user_supplements')
                 .upsert(userSupplementData);
             
-            console.log('User supplement upsert result:', { data, error });
+            console.log('APIレスポンス: user_supplements upsert', { data, error });
             console.log('Error details:', error);
             
             if (error) {

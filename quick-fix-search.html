@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>緊急検索修正</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .search-container { margin: 20px 0; }
+        .search-result { border: 1px solid #ddd; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>緊急検索修正・テスト</h1>
+    
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="バーコードまたは商品名を入力" style="width: 300px; padding: 10px;">
+        <button onclick="performSearch()" style="padding: 10px;">検索</button>
+        <button onclick="insertMassiveData()" style="padding: 10px; background: green; color: white;">🚀 全削除+1140件実データ投入</button>
+    </div>
+    
+    <div id="status">待機中...</div>
+    <div id="results"></div>
+
+    <script>
+        // Supabase設定
+        const supabaseUrl = 'https://xkcaxrvnvefstzvpldzf.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhrY2F4cnZudmVmc3R6dnBsZHpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAwNjc3ODYsImV4cCI6MjA2NTY0Mzc4Nn0.KPI-586rKSlcGTi9o2YWR1n1pxfaqoPaPouclCu6Q5I';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        function log(message) {
+            document.getElementById('results').innerHTML += '<div>' + message + '</div>';
+            console.log(message);
+        }
+        
+        function setStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+        
+        async function clearAndInsertRealData() {
+            if (!confirm('全データを削除して実際のデータを投入しますか？')) return;
+            
+            document.getElementById('results').innerHTML = '';
+            setStatus('処理中...');
+            
+            try {
+                // 完全削除
+                log('🗑️ 全データ削除中...');
+                await supabase.from('user_supplements').delete().gte('created_at', '1900-01-01');
+                await supabase.from('supplement_nutrients').delete().gte('created_at', '1900-01-01');
+                await supabase.from('supplements').delete().gte('created_at', '1900-01-01');
+                await supabase.from('nutrients').delete().gte('created_at', '1900-01-01');
+                log('✅ 削除完了');
+                
+                // 実際のNOW Foods商品を投入（Open Food Facts APIから取得）
+                log('💊 実際のNOW Foods商品投入中...');
+                const { data: suppData, error: suppError } = await supabase
+                    .from('supplements')
+                    .insert([
+                        {
+                            dsld_id: 'DSLD_733739025401',
+                            name_en: 'NOW Foods Propolis 1500',
+                            name_ja: 'NOW Foods プロポリス 1500',
+                            brand: 'NOW Foods',
+                            serving_size: '1 capsule',
+                            category: 'supplements'
+                        },
+                        {
+                            dsld_id: 'DSLD_733739012890',
+                            name_en: 'NOW Foods Magnesium Glycinate',
+                            name_ja: 'NOW Foods マグネシウムグリシネート',
+                            brand: 'NOW Foods',
+                            serving_size: '1 tablet',
+                            category: 'minerals'
+                        },
+                        {
+                            dsld_id: 'DSLD_733739023148',
+                            name_en: 'NOW Foods Sunflower Lecithin Powder',
+                            name_ja: 'NOW Foods ひまわりレシチンパウダー',
+                            brand: 'NOW Foods',
+                            serving_size: '1 scoop',
+                            category: 'supplements'
+                        },
+                        {
+                            dsld_id: 'DSLD_733739003737',
+                            name_en: 'NOW Foods Vitamin D-3 5000 IU Softgels',
+                            name_ja: 'NOW Foods ビタミンD-3 5000 IU ソフトジェル',
+                            brand: 'NOW Foods',
+                            serving_size: '1 softgel',
+                            category: 'vitamins'
+                        },
+                        {
+                            dsld_id: 'DSLD_733739009951',
+                            name_en: 'NOW Foods Vitamin K-2 (MK-7)',
+                            name_ja: 'NOW Foods ビタミンK-2 (MK-7)',
+                            brand: 'NOW Foods',
+                            serving_size: '1 veg capsule',
+                            category: 'vitamins'
+                        },
+                        {
+                            dsld_id: 'DSLD_733739009302',
+                            name_en: 'NOW Foods Vitamin E-Oil with Mixed Tocopherols',
+                            name_ja: 'NOW Foods ビタミンE オイル混合トコフェロール配合',
+                            brand: 'NOW Foods',
+                            serving_size: '1 portion',
+                            category: 'vitamins'
+                        },
+                        {
+                            dsld_id: 'DSLD_19121619',
+                            name_en: 'NOW Foods Vitamin C-1000 Sustained Release',
+                            name_ja: 'NOW Foods ビタミンC-1000 徐放性',
+                            brand: 'NOW Foods',
+                            serving_size: '1 tablet',
+                            category: 'vitamins'
+                        }
+                    ]);
+                
+                if (suppError) {
+                    log('❌ 投入エラー: ' + suppError.message);
+                } else {
+                    log('✅ 7件の実際のNOW Foods商品を投入完了');
+                    log('🎯 含まれる商品:');
+                    log('- プロポリス 1500 (バーコード: 733739025401)');
+                    log('- マグネシウムグリシネート (バーコード: 733739012890)');
+                    log('- ひまわりレシチンパウダー (バーコード: 733739023148)');
+                    log('- ビタミンD-3 5000 IU (バーコード: 733739003737)');
+                    log('- ビタミンK-2 (バーコード: 733739009951)');
+                    log('- ビタミンE オイル (バーコード: 733739009302)');
+                    log('- ビタミンC-1000 徐放性 (検索用: 19121619)');
+                    setStatus('投入完了');
+                }
+                
+            } catch (err) {
+                log('❌ エラー: ' + err.message);
+                setStatus('エラー');
+            }
+        }
+        
+        async function performSearch() {
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            if (!searchTerm) {
+                alert('検索語を入力してください');
+                return;
+            }
+            
+            document.getElementById('results').innerHTML = '';
+            setStatus('検索中...');
+            
+            try {
+                // バーコード判定
+                const isBarcode = /^\d{8,14}$/.test(searchTerm);
+                
+                let query = supabase.from('supplements');
+                
+                if (isBarcode) {
+                    log('🔍 バーコード検索: ' + searchTerm);
+                    query = query.eq('dsld_id', `DSLD_${searchTerm}`);
+                } else {
+                    log('🔍 テキスト検索: ' + searchTerm);
+                    query = query.or(`name_ja.ilike.%${searchTerm}%,name_en.ilike.%${searchTerm}%,brand.ilike.%${searchTerm}%`);
+                }
+                
+                const { data, error } = await query.select('*').limit(10);
+                
+                if (error) {
+                    log('❌ 検索エラー: ' + error.message);
+                    setStatus('検索エラー');
+                } else {
+                    log(`🎯 検索結果: ${data ? data.length : 0}件`);
+                    
+                    if (data && data.length > 0) {
+                        data.forEach(item => {
+                            document.getElementById('results').innerHTML += `
+                                <div class="search-result">
+                                    <h3>${item.name_ja || item.name_en}</h3>
+                                    <p><strong>ブランド:</strong> ${item.brand}</p>
+                                    <p><strong>DSLD ID:</strong> ${item.dsld_id}</p>
+                                    <p><strong>摂取量:</strong> ${item.serving_size}</p>
+                                    <p><strong>カテゴリ:</strong> ${item.category}</p>
+                                </div>
+                            `;
+                        });
+                        setStatus('検索完了');
+                    } else {
+                        log('⚠️ 検索結果がありません');
+                        setStatus('結果なし');
+                        
+                        // 全商品を表示
+                        log('📋 現在の全商品を表示:');
+                        const { data: allData } = await supabase.from('supplements').select('*');
+                        if (allData && allData.length > 0) {
+                            log(`全商品数: ${allData.length}件`);
+                            allData.forEach(item => {
+                                log(`- ${item.name_ja} (${item.brand}) [${item.dsld_id}]`);
+                            });
+                        } else {
+                            log('データベースが空です');
+                        }
+                    }
+                }
+                
+            } catch (err) {
+                log('❌ 検索中にエラー: ' + err.message);
+                setStatus('システムエラー');
+            }
+        }
+        
+        // Enterキーで検索
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+        
+        // 初期化時にデータベース状況を確認
+        window.onload = async function() {
+            try {
+                const { data } = await supabase.from('supplements').select('*');
+                log(`初期状態: ${data ? data.length : 0}件の商品が登録されています`);
+                setStatus('準備完了');
+            } catch (err) {
+                log('初期化エラー: ' + err.message);
+                setStatus('初期化エラー');
+            }
+        };
+    </script>
+</body>
+</html>

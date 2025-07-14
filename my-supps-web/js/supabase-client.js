@@ -2,8 +2,6 @@
 // 設定は config.js で管理されています
 
 // Initialize Supabase client with error handling
-let supabase = null;
-let isDemo = false;
 let initializationPromise = null;
 
 // 設定が読み込まれるまで待機
@@ -45,7 +43,6 @@ async function initializeSupabase() {
             if (!window.supabaseClient) {
                 window.supabaseClient = window.supabase.createClient(config.URL, config.ANON_KEY);
             }
-            supabase = window.supabaseClient;
             window.isDemo = false;
             isDemo = false;
             console.log('✅ Supabase client initialized successfully');
@@ -57,7 +54,7 @@ async function initializeSupabase() {
             const script = document.createElement('script');
             script.src = 'js/mock-auth.js';
             script.onload = () => {
-                supabase = new window.MockSupabaseClient();
+                window.supabaseClient = new window.MockSupabaseClient();
                 window.isDemo = true;
                 isDemo = true;
                 console.log('🎭 Demo mode activated with mock authentication');
@@ -87,13 +84,13 @@ document.addEventListener('DOMContentLoaded', () => {
 async function checkAuth() {
     // Wait for initialization if needed
     let attempts = 0;
-    while ((!window.supabaseClient && !supabase) && attempts < 50) { // Wait up to 5 seconds
+    while (!window.supabaseClient && attempts < 50) { // Wait up to 5 seconds
         await new Promise(resolve => setTimeout(resolve, 100));
         attempts++;
     }
     
     // Use the shared client
-    const client = window.supabaseClient || supabase;
+    const client = window.supabaseClient;
     
     if (!client) {
         console.warn('Supabase client not initialized after waiting');
@@ -133,12 +130,12 @@ async function updateAuthUI() {
 
 // Logout function
 async function logout() {
-    if (!supabase) {
+    if (!window.supabaseClient) {
         console.warn('Supabase client not initialized');
         return;
     }
     try {
-        const { error } = await supabase.auth.signOut();
+        const { error } = await window.supabaseClient.auth.signOut();
         if (!error) {
             window.location.href = 'index.html';
         }
@@ -155,8 +152,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // Listen for auth state changes after initialization
 async function setupAuthListener() {
     await initializationPromise;
-    if (supabase) {
-        supabase.auth.onAuthStateChange((event, session) => {
+    if (window.supabaseClient) {
+        window.supabaseClient.auth.onAuthStateChange((event, session) => {
             console.log('Auth state changed:', event, session ? 'Logged in' : 'Logged out');
             updateAuthUI();
         });
@@ -167,3 +164,16 @@ async function setupAuthListener() {
 document.addEventListener('DOMContentLoaded', () => {
     setupAuthListener();
 });
+
+// APIレスポンス取得例
+async function fetchSupplements() {
+    if (!window.supabaseClient) {
+        console.error('Supabase client not initialized');
+        return;
+    }
+    const { data, error } = await window.supabaseClient
+        .from('supplements')
+        .select('*');
+    console.log('APIレスポンス: supplements', { data, error });
+    return { data, error };
+}
