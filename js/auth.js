@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             // Redirect to My Supps page after successful login
             setTimeout(() => {
-                window.location.href = 'my-supps.html';
+                window.location.href = '/my-supps';
             }, 1000);
             
         } catch (error) {
@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             // 即座にマイページに遷移
             setTimeout(() => {
-                window.location.href = 'my-supps.html';
+                window.location.href = '/my-supps';
             }, 1500);
             
         } catch (error) {
@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (user) {
                 console.log('OAuth success, redirecting to My Supps');
                 // Redirect to My Supps page
-                window.location.href = 'my-supps.html';
+                window.location.href = '/my-supps';
             }
         } catch (error) {
             console.error('Error getting user after OAuth:', error);
